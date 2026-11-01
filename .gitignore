@@ -1,0 +1,13 @@
+# Personal data never lives in this repo. It is kept in YOMEPAY_DATA_DIR (default ~/.yomepay/data).
+.env
+data/
+media/
+submissions/
+penalties/
+secrets.json
+goals.json
+*.key
+*.pem
+node_modules/
+.DS_Store
+.claude/launch.json

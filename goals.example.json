@@ -1,0 +1,122 @@
+{
+  "settings": {
+    "dayBoundary": "03:00",
+    "weekStart": 1,
+    "graceMinutes": 65,
+    "morning": "09:00",
+    "nagTimes": [
+      "12:00",
+      "20:00"
+    ],
+    "wifeDigest": "21:00",
+    "exemptionsPerMonth": 3,
+    "reminderWindowMinutes": 10,
+    "startDate": null
+  },
+  "goals": [
+    {
+      "id": "gym",
+      "title": "パーソナルジム",
+      "art": "gym",
+      "color": "orange",
+      "reminders": [
+        "20:00",
+        "22:00",
+        "24:00"
+      ],
+      "location": {
+        "radiusM": 200
+      },
+      "rules": [
+        {
+          "from": null,
+          "requires": [
+            "photo",
+            "location"
+          ],
+          "period": "weekly",
+          "count": 2,
+          "penaltyYen": 3000
+        }
+      ],
+      "photo": {
+        "prompt": "指示どおりの手とジムの中（マシンやトレーニングスペース）が一緒に写っている。"
+      }
+    },
+    {
+      "id": "pushup",
+      "title": "腕立て10回",
+      "art": "pushup",
+      "color": "pink",
+      "reminders": [
+        "20:00",
+        "22:00",
+        "24:00"
+      ],
+      "rules": [
+        {
+          "from": null,
+          "requires": [
+            "video"
+          ],
+          "period": "daily",
+          "penaltyYen": 3000
+        }
+      ],
+      "video": {
+        "prompt": "最初に指示どおりの手を見せてから、腕立てを10回以上。胸がしっかり下がった回だけ数える。体全体が写っている。"
+      }
+    },
+    {
+      "id": "reading",
+      "title": "読書",
+      "art": "book",
+      "color": "indigo",
+      "reminders": [
+        "20:00",
+        "22:00",
+        "24:00"
+      ],
+      "text": {
+        "prompt": "本のタイトル、読んだページ、何が書いてあってどう思ったか。具体的な内容と自分の考えを入れる（タイトルから想像できる一般論はだめ）"
+      },
+      "rules": [
+        {
+          "from": null,
+          "requires": [
+            "text"
+          ],
+          "period": "daily",
+          "penaltyYen": 3000,
+          "minChars": 80
+        }
+      ]
+    },
+    {
+      "id": "dev",
+      "title": "開発（GitHubにpush）",
+      "art": "code",
+      "color": "teal",
+      "reminders": [
+        "20:00",
+        "22:00",
+        "24:00"
+      ],
+      "github": {
+        "excludeRepos": [
+          "your-name/backup-repo"
+        ]
+      },
+      "rules": [
+        {
+          "from": null,
+          "requires": [
+            "github"
+          ],
+          "period": "daily",
+          "penaltyYen": 3000
+        }
+      ]
+    }
+  ]
+}

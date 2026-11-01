@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>yomepay</title>
+<style>
+/* Built the way an Apple first-party iOS app is: system colors, system font, inset grouped lists,
+   large titles, a translucent tab bar, sheets, and one tint color (blue) for everything you can tap. */
+:root {
+  color-scheme: light dark;
+  --bg: #f2f2f7; --card: #fff; --fill: rgba(120,120,128,.12); --fill-2: rgba(120,120,128,.2);
+  --label: #000; --label-2: rgba(60,60,67,.6); --label-3: rgba(60,60,67,.3); --sep: rgba(60,60,67,.29);
+  --bar: rgba(249,249,249,.82); --on-tint: #fff; --seg-on: #fff; --as-bg: rgba(250,250,250,.86);
+  --sheet-bg: #f2f2f7; --sheet-card: #fff;
+  --blue: #007aff; --green: #34c759; --red: #ff3b30; --orange: #ff9500; --yellow: #ffcc00; --pink: #ff2d55;
+  --indigo: #5856d6; --purple: #af52de; --teal: #30b0c7; --mint: #00c7be; --brown: #a2845e; --gray: #8e8e93;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+  --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Hiragino Sans", system-ui, sans-serif;
+  --tabbar: 50px; --side: 0px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000; --card: #1c1c1e; --fill: rgba(118,118,128,.24); --fill-2: rgba(118,118,128,.36);
+    --label: #fff; --label-2: rgba(235,235,245,.6); --label-3: rgba(235,235,245,.3); --sep: rgba(84,84,88,.65);
+    --bar: rgba(22,22,24,.78); --seg-on: #636366; --as-bg: rgba(44,44,46,.86);
+    --sheet-bg: #1c1c1e; --sheet-card: #2c2c2e;
+    --blue: #0a84ff; --green: #30d158; --red: #ff453a; --orange: #ff9f0a; --yellow: #ffd60a; --pink: #ff375f;
+    --indigo: #5e5ce6; --purple: #bf5af2; --teal: #40c8e0; --mint: #63e6e2; --brown: #ac8e68; --gray: #8e8e93;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--label); }
+body { font: 17px/1.35 var(--font); -webkit-font-smoothing: antialiased; padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 24px); }
+body.locked { overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 55%, transparent); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+svg { display: block; }
+
+/* navigation bar: appears once the large title scrolls away */
+.navbar { position: fixed; top: 0; left: var(--side); right: 0; z-index: 8; height: calc(44px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top);
+  display: grid; place-items: center; font-weight: 600; font-size: 17px; background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: .5px solid var(--sep); opacity: 0; pointer-events: none; transition: opacity .2s; }
+body.scrolled .navbar { opacity: 1; }
+
+main { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+section[data-tab] { display: none; }
+section[data-tab].on { display: block; }
+.lt { padding: calc(env(safe-area-inset-top) + 20px) 4px 8px; display: flex; align-items: flex-end; gap: 12px; }
+.lt > div { flex: 1; min-width: 0; }
+.lt h1 { font-size: 34px; line-height: 41px; font-weight: 700; margin: 0; letter-spacing: .01em; }
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--label-2); display: flex; align-items: center; gap: 8px; min-height: 18px; }
+.capsule { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--orange) 18%, transparent); color: var(--orange); }
+.addbtn { width: 34px; height: 34px; border-radius: 50%; background: var(--fill); color: var(--blue); display: grid; place-items: center; margin-bottom: 4px; }
+.addbtn svg { width: 18px; height: 18px; }
+
+/* section headings: Fitness-style bold titles, Settings-style small caps headers */
+.h2 { font-size: 22px; font-weight: 700; margin: 28px 4px 8px; }
+.gh { font-size: 13px; color: var(--label-2); margin: 26px 16px 7px; text-transform: uppercase; }
+.gf { font-size: 13px; color: var(--label-2); margin: 7px 16px 0; line-height: 1.45; }
+.gf code { font-size: 12px; }
+
+/* inset grouped list */
+.card { background: var(--card); border-radius: 12px; overflow: hidden; }
+.list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 12px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 10px 16px; position: relative; width: 100%; text-align: left; }
+.row + .row::before, .list > li + li > .row::before { content: ""; position: absolute; top: 0; right: 0; left: 58px; border-top: .5px solid var(--sep); }
+.list.plain .row + .row::before, .list.plain > li + li > .row::before { left: 16px; }
+button.row:active, .row.tap:active { background: var(--fill-2); }
+.row .txt { flex: 1; min-width: 0; }
+.row .txt b { display: block; font-weight: 400; }
+.row .txt span { display: block; font-size: 15px; color: var(--label-2); margin-top: 1px; overflow-wrap: anywhere; }
+.row .txt .note { color: var(--orange); font-size: 13px; }
+.row .val { color: var(--label-2); text-align: right; }
+.row.wrap { flex-wrap: wrap; }
+.row input:not([type]), .row input[type=text], .row input[type=number] { flex: 1; min-width: 0; border: 0; background: transparent; padding: 4px 0; outline: none; }
+.row input::placeholder, textarea::placeholder { color: var(--label-3); }
+.tile { width: 30px; height: 30px; border-radius: 7px; display: grid; place-items: center; color: #fff; flex: none; }
+.tile svg { width: 19px; height: 19px; }
+.chev { width: 8px; height: 14px; color: var(--label-3); flex: none; }
+.trail { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--label-2); white-space: nowrap; }
+.g { width: 24px; height: 24px; flex: none; }
+.trail .g { width: 22px; height: 22px; }
+.tick { width: 20px; height: 20px; color: var(--blue); flex: none; }
+
+/* controls */
+.pill { background: var(--fill); color: var(--blue); font-size: 15px; font-weight: 600; padding: 6px 15px; border-radius: 999px; white-space: nowrap; min-height: 32px; }
+.pill.fill { background: var(--blue); color: var(--on-tint); }
+.pill:active, .big:active, .addbtn:active { opacity: .6; }
+.pill:disabled, .big:disabled { opacity: .4; cursor: default; }
+.big { display: block; width: 100%; background: var(--blue); color: var(--on-tint); font-size: 17px; font-weight: 600; border-radius: 12px; min-height: 50px; padding: 14px; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--fill); border-radius: 9px; padding: 2px; gap: 2px; width: 100%; }
+.seg button { height: 30px; border-radius: 7px; font-size: 13px; font-weight: 500; }
+.seg button.on { background: var(--seg-on); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04); font-weight: 600; }
+.stepper { display: inline-flex; background: var(--fill); border-radius: 8px; flex: none; }
+.stepper button { width: 46px; height: 32px; font-size: 20px; color: var(--label); display: grid; place-items: center; }
+.stepper button + button { border-left: .5px solid var(--sep); }
+.stepper button:active { background: var(--fill-2); }
+.days { display: flex; gap: 6px; justify-content: space-between; width: 100%; }
+.days button { width: 38px; height: 38px; border-radius: 50%; background: var(--fill); font-size: 15px; font-weight: 600; }
+.days button.on { background: var(--blue); color: #fff; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--fill); border-radius: 999px; padding: 6px 8px 6px 12px; font-size: 15px; font-variant-numeric: tabular-nums; }
+.chip.sel { background: var(--blue); color: #fff; }
+.chip button { width: 20px; height: 20px; border-radius: 50%; background: var(--fill-2); display: grid; place-items: center; color: var(--label-2); font-size: 13px; }
+.chip.add { color: var(--blue); padding-right: 12px; font-weight: 600; }
+.chip.add input { border: 0; background: transparent; color: var(--blue); width: 92px; font: inherit; }
+button.chip { padding: 6px 12px; }
+.check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--label-3); flex: none; display: grid; place-items: center; transition: background .15s, border-color .15s; }
+.check svg { width: 14px; height: 14px; color: #fff; opacity: 0; }
+.check.on { background: var(--green); border-color: var(--green); }
+.check.on svg { opacity: 1; }
+.row[data-pay] + .row[data-pay]::before { left: 100px; }
+.struck b, .struck .money { text-decoration: line-through; color: var(--label-2) !important; }
+.tlink { color: var(--blue); font-size: 17px; }
+.tlink.red { color: var(--red); }
+
+/* today: summary card */
+.summary { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 16px 18px; flex-wrap: wrap; }
+.sum-txt { min-width: 0; }
+.sum-side { text-align: right; }
+.sum-txt .k { font-size: 15px; font-weight: 600; color: var(--label-2); }
+.bigtime { font-family: var(--rounded); font-weight: 700; font-size: 44px; line-height: 1.05; letter-spacing: -.01em; margin: 2px 0; white-space: nowrap; }
+.bigtime small { font-size: 20px; font-weight: 600; margin: 0 4px 0 1px; }
+.bigtime.hot { color: var(--red); }
+.sum-txt .sub { font-size: 15px; color: var(--label-2); }
+.stake { font-size: 15px; font-weight: 600; color: var(--red); }
+.stake.ok { color: var(--green); }
+.empty-card { padding: 28px 20px; text-align: center; }
+.empty-card p { color: var(--label-2); margin: 8px 0 16px; font-size: 15px; }
+.empty { padding: 14px 16px; color: var(--label-2); font-size: 15px; }
+
+/* records: streak cards */
+.streaks { display: grid; gap: 12px; }
+@media (min-width: 620px) { .streaks { grid-template-columns: 1fr 1fr; } }
+.scard { position: relative; isolation: isolate; overflow: hidden; border-radius: 20px; min-height: 212px; padding: 16px 18px; color: #fff; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 82%, #fff) 0%, var(--c) 45%, color-mix(in srgb, var(--c) 62%, #000) 100%); text-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.scard::before { content: ""; position: absolute; z-index: -2; width: 220px; height: 220px; border-radius: 50%; right: -60px; top: -80px; background: rgba(255,255,255,.14); }
+.scard::after { content: ""; position: absolute; z-index: -2; width: 140px; height: 140px; border-radius: 50%; left: -40px; bottom: -70px; background: rgba(0,0,0,.08); }
+.scard.photo { background: #222 var(--img) center / cover; }
+.scard.photo::before { inset: 0; width: auto; height: auto; border-radius: 0; background: linear-gradient(to top, rgba(0,0,0,.72), rgba(0,0,0,.05) 70%); }
+.scard.photo::after, .scard.photo .art { display: none; }
+.scard .art { position: absolute; z-index: -1; right: -6px; bottom: 26px; width: 140px; height: 140px; color: #fff; opacity: .95; filter: drop-shadow(0 6px 14px rgba(0,0,0,.15)); }
+.scard .art .d { opacity: .45; }
+.scard .top { display: flex; align-items: flex-start; gap: 8px; }
+.scard h3 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.25; }
+.scard .freq { font-size: 13px; font-weight: 600; opacity: .85; margin-top: 2px; }
+.scard .paused { font-size: 12px; font-weight: 700; background: rgba(0,0,0,.25); padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.scard .bottom { margin-top: auto; }
+.flame-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 6px; border-radius: 999px; background: rgba(0,0,0,.24); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 13px; font-weight: 700; text-shadow: none; }
+.flame { width: 22px; height: 28px; transform-origin: 50% 90%; animation: flick 1.7s ease-in-out infinite; }
+.flame.l0 { animation: none; }
+@keyframes flick { 0%, 100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.05, 1.12) rotate(2deg); } }
+.scard .count { font-family: var(--rounded); font-weight: 800; font-size: 64px; line-height: 1; margin: 8px 0 0; letter-spacing: -.02em; }
+.scard .count small { font-size: 20px; font-weight: 700; margin-left: 4px; letter-spacing: 0; }
+.scard .meta { font-size: 13px; font-weight: 600; opacity: .9; margin-top: 4px; max-width: 66%; }
+
+/* today: compact goal cards (the streak card, half height) */
+.tcards { display: grid; gap: 12px; }
+@media (min-width: 620px) { .tcards { grid-template-columns: 1fr 1fr; } }
+.tcard { position: relative; isolation: isolate; overflow: hidden; border-radius: 18px; min-height: 112px; padding: 12px 14px 12px 16px; color: #fff; cursor: pointer;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 8px; text-shadow: 0 1px 2px rgba(0,0,0,.18);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 82%, #fff) 0%, var(--c) 45%, color-mix(in srgb, var(--c) 62%, #000) 100%); transition: transform .15s; }
+.tcard:active { transform: scale(.98); }
+.tcard::before { content: ""; position: absolute; z-index: -2; width: 160px; height: 160px; border-radius: 50%; right: -40px; top: -70px; background: rgba(255,255,255,.14); }
+.tcard.photo { background: #222 var(--img) center / cover; }
+.tcard.photo::before { inset: 0; width: auto; height: auto; border-radius: 0; background: linear-gradient(to right, rgba(0,0,0,.66), rgba(0,0,0,.2)); }
+.tcard .art { position: absolute; z-index: -1; right: 8px; bottom: -14px; width: 92px; height: 92px; color: #fff; opacity: .3; }
+.tcard .art .d { opacity: .5; }
+.tcard.photo .art { display: none; }
+.tcard .head { display: flex; align-items: flex-start; gap: 10px; }
+.tcard .head > div { flex: 1; min-width: 0; }
+.tcard h3 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tcard .freq { font-size: 13px; font-weight: 600; opacity: .85; margin-top: 1px; }
+.tcard .foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.tcard .streak { display: flex; align-items: flex-end; gap: 4px; }
+.tcard .streak .flame { width: 20px; height: 26px; margin-bottom: 3px; }
+.tcard .streak b { font-family: var(--rounded); font-weight: 800; font-size: 34px; line-height: 1; letter-spacing: -.02em; }
+.tcard .streak small { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.tcard .state { font-size: 13px; font-weight: 600; text-align: right; opacity: .95; }
+/* the button on a card: white, so it reads on any color */
+.cbtn { flex: none; background: #fff; color: var(--c); text-shadow: none; font-size: 15px; font-weight: 700; padding: 6px 14px; border-radius: 999px; min-height: 32px; white-space: nowrap; }
+.tcard.photo .cbtn { color: #000; }
+.cbtn:active { opacity: .7; }
+.cbadge { flex: none; display: inline-flex; align-items: center; gap: 5px; background: rgba(0,0,0,.22); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  text-shadow: none; font-size: 13px; font-weight: 700; padding: 5px 11px 5px 7px; border-radius: 999px; white-space: nowrap; }
+.cbadge.plain { padding-left: 11px; }
+.cbadge svg { width: 18px; height: 18px; }
+/* deadline close: a ring around the card and a time chip; very close: red and pulsing */
+.tcard.a-warn { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--orange); }
+.tcard.a-urgent { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--red); animation: ring 1.6s ease-in-out infinite; }
+@keyframes ring { 50% { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--red), 0 0 22px 6px color-mix(in srgb, var(--red) 45%, transparent); } }
+.due { display: inline-flex; align-items: center; gap: 5px; background: #fff; color: var(--orange); text-shadow: none; font-size: 13px; font-weight: 700; padding: 4px 10px 4px 7px; border-radius: 999px; white-space: nowrap; }
+.due svg { width: 15px; height: 15px; }
+.a-urgent .due { background: var(--red); color: #fff; }
+.tcard.soon { opacity: .72; }
+.tcards + .gf { margin-top: 10px; }
+.more { display: block; width: 100%; text-align: center; color: var(--blue); font-size: 15px; padding: 12px; }
+
+/* submissions */
+.thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--fill); flex: none; align-self: flex-start; }
+.sub-row { align-items: flex-start; }
+.sub-row .tile { margin-top: 2px; }
+.memo { font-size: 15px; margin-top: 6px; color: var(--label); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; }
+.warn { font-size: 13px; color: var(--red); margin-top: 3px; }
+.status-t { font-size: 15px; white-space: nowrap; }
+.status-t.pending { color: var(--orange); }
+.status-t.approved { color: var(--green); }
+.status-t.rejected { color: var(--red); }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+
+/* penalties: Wallet-style balance */
+.balance { padding: 20px 18px 18px; }
+.balance .k { font-size: 15px; font-weight: 600; color: var(--label-2); }
+.balance .amt { font-family: var(--rounded); font-size: 48px; font-weight: 700; line-height: 1.1; margin: 4px 0 2px; }
+.balance .amt.due { color: var(--red); }
+.balance .sub { font-size: 15px; color: var(--label-2); }
+.money { font-family: var(--rounded); font-weight: 600; font-size: 17px; color: var(--label); white-space: nowrap; }
+
+/* tab bar (phone) / sidebar (desktop) */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; display: grid; grid-template-columns: repeat(4, 1fr);
+  padding-bottom: env(safe-area-inset-bottom); background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-top: .5px solid var(--sep); }
+nav.tabs .brand { display: none; }
+nav.tabs button { height: var(--tabbar); display: grid; justify-items: center; align-content: center; gap: 2px; color: var(--gray); font-size: 10px; font-weight: 500; position: relative; }
+nav.tabs button svg { width: 26px; height: 26px; }
+nav.tabs button.on { color: var(--blue); }
+nav.tabs .badge { position: absolute; top: 3px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: 12px; font-weight: 600; line-height: 18px; text-align: center; }
+
+@media (min-width: 900px) {
+  :root { --side: 248px; }
+  body { padding-bottom: 48px; padding-left: var(--side); }
+  nav.tabs { top: 0; right: auto; width: var(--side); display: flex; flex-direction: column; gap: 2px; padding: 22px 12px; border-top: 0; border-right: .5px solid var(--sep); }
+  nav.tabs .brand { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 700; padding: 0 10px 16px; }
+  nav.tabs button { height: auto; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--label); font-size: 15px; font-weight: 500; text-align: left; }
+  nav.tabs button svg { width: 22px; height: 22px; color: var(--blue); }
+  nav.tabs button.on { background: var(--fill-2); color: var(--label); font-weight: 600; }
+  nav.tabs .badge { position: static; margin-left: auto; }
+  .lt { padding-top: 40px; }
+}
+
+/* toast: a small capsule at the top, like a system HUD */
+.toast { position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: calc(50% + var(--side) / 2); z-index: 60; transform: translate(-50%, -160%);
+  background: var(--bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  box-shadow: 0 8px 30px rgba(0,0,0,.18); border-radius: 999px; padding: 12px 20px; font-size: 15px; font-weight: 600; max-width: min(92vw, 520px); text-align: center;
+  transition: transform .45s cubic-bezier(.2, 1.2, .3, 1); }
+.toast.on { transform: translate(-50%, 0); }
+
+/* sheet (page sheet on the phone, centered panel on wide screens) */
+.sheet-wrap { position: fixed; inset: 0; z-index: 35; display: none; }
+.sheet-wrap.on { display: block; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.4); animation: fade .25s; }
+.sheet-panel { --bg: var(--sheet-bg); --card: var(--sheet-card); position: absolute; left: 0; right: 0; bottom: 0; top: calc(env(safe-area-inset-top) + 12px);
+  background: var(--bg); color: var(--label); border-radius: 12px 12px 0 0; display: flex; flex-direction: column; overflow: hidden; animation: up .42s cubic-bezier(.2, .9, .25, 1); }
+@media (min-width: 700px) { .sheet-panel { left: 50%; width: 620px; margin-left: -310px; top: 5vh; bottom: 5vh; border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); } }
+.sheet-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 52px; padding: 0 8px; border-bottom: .5px solid var(--sep); background: var(--bar); }
+.sheet-bar b { font-size: 17px; font-weight: 600; text-align: center; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 56vw; }
+.sheet-bar button { font-size: 17px; color: var(--blue); padding: 10px 8px; justify-self: start; }
+.sheet-bar button:last-child { justify-self: end; font-weight: 600; }
+.sheet-bar button:disabled { color: var(--label-3); }
+.sheet-body { flex: 1; overflow: auto; padding: 0 16px calc(32px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+.sheet-body textarea { display: block; width: 100%; min-height: 200px; border: 0; background: transparent; padding: 12px 16px; resize: vertical; line-height: 1.6; outline: none; }
+.sheet-body textarea.short { min-height: 88px; }
+.lbl { font-size: 17px; flex: none; }
+.lbl.w { width: 96px; color: var(--label-2); font-size: 15px; }
+.chars { font-variant-numeric: tabular-nums; }
+.chars.ok { color: var(--green); }
+.preview-media { width: 100%; max-height: 260px; object-fit: contain; background: #000; display: block; }
+@keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes fade { from { opacity: 0; } }
+
+/* editor bits */
+.cond { font-size: 17px; line-height: 1.5; margin: 0 4px 14px; }
+.cond.none { color: var(--label-2); }
+.sheet-body .h2 { margin-top: 30px; }
+.card-edit { position: absolute; top: 12px; right: 12px; z-index: 2; background: rgba(0,0,0,.24); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  color: #fff; font-size: 15px; font-weight: 600; padding: 5px 13px; border-radius: 999px; text-shadow: none; }
+.card-edit:active { opacity: .6; }
+.styler { margin-top: 12px; animation: fade .2s; }
+.pick { display: grid; grid-template-columns: repeat(auto-fill, 44px); justify-content: space-between; gap: 12px 8px; padding: 14px 16px; }
+.pick button { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; position: relative; }
+.pick button svg { width: 24px; height: 24px; }
+.pick button.on::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2.5px solid var(--blue); }
+.pick.colors { grid-template-columns: repeat(6, 30px); }
+.pick.colors button { width: 30px; height: 30px; }
+.tmpl { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+.tmpl::-webkit-scrollbar { display: none; }
+.tmpl button { flex: none; display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 12px; padding: 8px 12px 8px 8px; font-size: 15px; white-space: nowrap; }
+.tmpl .tile { width: 26px; height: 26px; border-radius: 6px; }
+.tmpl .tile svg { width: 16px; height: 16px; }
+.mini { margin-top: 16px; position: relative; }
+.mini .scard .top { padding-right: 64px; }
+.mini .scard { min-height: 150px; }
+.mini .scard .count { font-size: 44px; }
+.mini .scard .art { width: 110px; height: 110px; }
+
+/* action sheet */
+.as-wrap { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.4); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s; }
+@media (min-width: 700px) { .as-wrap { align-items: center; } }
+.as { width: min(100%, 440px); padding: 0 8px calc(8px + env(safe-area-inset-bottom)); animation: up .35s cubic-bezier(.2, .9, .25, 1); }
+.as-group { background: var(--as-bg); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); border-radius: 14px; overflow: hidden; margin-bottom: 8px; }
+.as-title { font-size: 13px; color: var(--label-2); text-align: center; padding: 14px 16px; line-height: 1.4; }
+.as-title b { display: block; font-size: 13px; font-weight: 600; }
+.as button { display: block; width: 100%; min-height: 57px; font-size: 19px; color: var(--blue); border-top: .5px solid var(--sep); padding: 8px 16px; }
+.as-group > button:first-child { border-top: 0; }
+.as button.destructive { color: var(--red); }
+.as button.cancel { font-weight: 600; }
+.as button:disabled { color: var(--label-3); }
+.as button:active { background: var(--fill); }
+
+/* capture: Camera-app look (always dark) */
+.overlay { position: fixed; inset: 0; z-index: 40; background: #000; color: #fff; display: none; flex-direction: column; }
+.overlay.on { display: flex; }
+.overlay .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; padding: env(safe-area-inset-top) 8px 0; }
+.overlay .bar b { font-size: 17px; font-weight: 600; text-align: center; }
+.overlay .bar button { font-size: 17px; padding: 10px 8px; justify-self: start; }
+.viewer { flex: 1; position: relative; margin: 6px 0 0; overflow: hidden; background: #000; min-height: 0; }
+.viewer video, .viewer img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.instruction { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 2; padding: 12px 16px; border-radius: 16px; background: rgba(28,28,30,.72); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.instruction small { display: block; font-size: 13px; color: rgba(235,235,245,.6); font-weight: 600; }
+.instruction span { display: block; font-size: 20px; font-weight: 700; line-height: 1.3; margin-top: 2px; }
+.rec { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: #ff3b30; color: #fff; font-family: var(--rounded); font-weight: 600; font-size: 15px; padding: 3px 10px; border-radius: 6px; display: none; }
+.rec.on { display: block; }
+.cap-howto { font-size: 13px; color: rgba(235,235,245,.6); text-align: center; padding: 10px 24px 0; }
+.controls { padding: 6px 16px calc(14px + env(safe-area-inset-bottom)); display: grid; gap: 10px; }
+.status { font-size: 13px; color: rgba(235,235,245,.7); min-height: 18px; text-align: center; }
+.status.err { color: #ff6961; }
+.row3 { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 84px; }
+.row3 > :first-child { justify-self: start; }
+.row3 > :last-child { justify-self: end; }
+.tbtn { font-size: 17px; color: #fff; padding: 10px 6px; }
+.tbtn.strong { font-weight: 600; color: #ffd60a; }
+.tbtn:disabled { opacity: .4; }
+.shutter { width: 76px; height: 76px; border-radius: 50%; border: 4px solid #fff; display: grid; place-items: center; }
+.shutter::after { content: ""; width: 62px; height: 62px; border-radius: 50%; background: #fff; transition: all .25s cubic-bezier(.2, .8, .2, 1); }
+.shutter.video::after { background: #ff3b30; }
+.shutter.recording::after { width: 30px; height: 30px; border-radius: 7px; }
+.shutter:active::after { transform: scale(.92); }
+.flip { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.16); display: grid; place-items: center; color: #fff; }
+.flip svg { width: 22px; height: 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast, .shutter::after, .navbar, .check, .tcard { transition: none; }
+  .flame, .sheet-panel, .as, .sheet-backdrop, .as-wrap, .tcard.a-urgent, .styler { animation: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="flameDefs"></defs></svg>
+<div class="navbar" id="navbar" aria-hidden="true"></div>
+
+<main>
+  <section data-tab="today" class="on" aria-labelledby="t-today">
+    <header class="lt"><div><div class="eyebrow" id="eyebrow"></div><h1 id="t-today">今日</h1></div></header>
+    <div id="tonight"></div>
+    <div id="recent"></div>
+  </section>
+
+  <section data-tab="goals" aria-labelledby="t-goals">
+    <header class="lt"><div><div class="eyebrow"></div><h1 id="t-goals">目標</h1></div>
+      <button class="addbtn" data-new-goal aria-label="目標を追加"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg></button></header>
+    <div id="goalList"></div>
+  </section>
+
+  <section data-tab="ledger" aria-labelledby="t-ledger">
+    <header class="lt"><div><div class="eyebrow"></div><h1 id="t-ledger">罰金</h1></div></header>
+    <div id="ledger"></div>
+  </section>
+
+  <section data-tab="settings" aria-labelledby="t-settings">
+    <header class="lt"><div><div class="eyebrow"></div><h1 id="t-settings">設定</h1></div></header>
+    <div id="settings"></div>
+  </section>
+</main>
+
+<nav class="tabs" id="tabs" aria-label="タブ">
+  <div class="brand">yomepay <span id="modeTag"></span></div>
+  <button data-go="today" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9.9"/><circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="2.6"/></svg><span>今日</span></button>
+  <button data-go="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 6h10M10.5 12h10M10.5 18h10"/><path d="M3 6l1.6 1.6L7.5 4.6M3 12l1.6 1.6 2.9-3M3 18l1.6 1.6 2.9-3"/></svg><span>目標</span></button>
+  <button data-go="ledger"><svg viewBox="0 0 24 24"><mask id="yenCut"><rect width="24" height="24" fill="#fff"/><path d="M8.3 6.3 12 11.6l3.7-5.3M12 11.6v6.6M8.8 12.6h6.4M8.8 15.4h6.4" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></mask><circle cx="12" cy="12" r="10.5" fill="currentColor" mask="url(#yenCut)"/></svg><span>罰金</span></button>
+  <button data-go="settings"><svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M19.31 9.94L21.76 9.82L21.76 14.18L19.31 14.06L19.02 14.91L18.63 15.71L20.44 17.36L17.36 20.44L15.71 18.63L14.91 19.02L14.06 19.31L14.18 21.76L9.82 21.76L9.94 19.31L9.09 19.02L8.29 18.63L6.64 20.44L3.56 17.36L5.37 15.71L4.98 14.91L4.69 14.06L2.24 14.18L2.24 9.82L4.69 9.94L4.98 9.09L5.37 8.29L3.56 6.64L6.64 3.56L8.29 5.37L9.09 4.98L9.94 4.69L9.82 2.24L14.18 2.24L14.06 4.69L14.91 4.98L15.71 5.37L17.36 3.56L20.44 6.64L18.63 8.29L19.02 9.09ZM12 15.4a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z"/></svg><span>設定</span></button>
+</nav>
+
+<div class="sheet-wrap" id="sheet">
+  <div class="sheet-backdrop"></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-bar"><button id="sheetLeft">キャンセル</button><b id="sheetTitle"></b><button id="sheetRight"></button></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="cap" role="dialog" aria-modal="true" aria-labelledby="capTitle">
+  <div class="bar"><button id="capClose">キャンセル</button><b id="capTitle"></b><span></span></div>
+  <div class="viewer" id="capViewer">
+    <div class="instruction" id="capInstr"></div>
+    <video id="capVideo" playsinline muted autoplay></video>
+    <img id="capImg" alt="" hidden>
+    <video id="capPlay" playsinline controls hidden></video>
+    <div class="rec num" id="capRec">0:00</div>
+  </div>
+  <div class="cap-howto" id="capHowto"></div>
+  <div class="controls">
+    <div class="status" id="capStatus" role="status"></div>
+    <div id="capButtons"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<input type="file" id="imageFile" accept="image/*" hidden>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const yen = n => '¥' + Number(n || 0).toLocaleString('ja-JP');
+let S = null, skew = 0;
+// Language: Japanese or English. The server's setting wins once the state has loaded.
+let LANG = (navigator.language || '').startsWith('ja') ? 'ja' : 'en';
+const L = (ja, en) => LANG === 'en' ? en : ja;
+const SEP = () => L('・', ' · ');
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+
+async function api(method, url, body, raw) {
+  const opts = { method, headers: { 'X-Yome': '1' } };
+  if (raw) { opts.body = raw; opts.headers['Content-Type'] = raw.type || 'application/octet-stream'; }
+  else if (body !== undefined) { opts.body = JSON.stringify(body); opts.headers['Content-Type'] = 'application/json'; }
+  const res = await fetch(url, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || L(`エラー (${res.status})`, `Error (${res.status})`));
+  return data;
+}
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), ms); }
+
+/* ---------- icons (drawn to look like SF Symbols) ---------- */
+const sv = (body, fill) => `<svg viewBox="0 0 24 24" ${fill ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'} aria-hidden="true">${body}</svg>`;
+const I = {
+  yen: sv('<path d="M7 4l5 7 5-7M12 11v9M7.5 12.5h9M7.5 16h9"/>'),
+  bell: sv('<path d="M12 3.5a6 6 0 0 0-6 6v4.3L4.3 17h15.4L18 13.8V9.5a6 6 0 0 0-6-6z" fill="currentColor" stroke="none"/><path d="M9.8 19.8a2.4 2.4 0 0 0 4.4 0" stroke-width="2"/>'),
+  heart: sv('<path d="M12 20.5s-8-4.9-8-11a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8c0 6.1-8 11-8 11z"/>', true),
+  pin: sv('<path fill-rule="evenodd" d="M12 21.5s-7-6.3-7-11.7a7 7 0 0 1 14 0c0 5.4-7 11.7-7 11.7zM12 12.3a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>', true),
+  flip: sv('<path d="M4.5 12a7.5 7.5 0 0 1 13.2-4.9M19.5 12a7.5 7.5 0 0 1-13.2 4.9M18.2 3.5v4h-4M5.8 20.5v-4h4"/>'),
+  text: sv('<path d="M6 3h8l4 4v14H6zM9 11h6M9 15h6M9 7h3"/>'),
+  camera: sv('<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/>'),
+  video: sv('<rect x="2.5" y="6.5" width="13" height="11" rx="2.2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/>'),
+  code: sv('<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.8 4.5l-3.6 15"/>'),
+};
+// Goal illustrations: the same drawing is a small glyph in list tiles and a big duotone picture on the
+// streak cards (parts marked "d" are drawn dimmer there).
+const ART = {
+  gym: { name: ['ジム', 'Gym'], svg: '<path class="d" d="M1.5 10h2.5v4H1.5zM20 10h2.5v4H20z"/><path d="M4.8 7.2a1 1 0 0 1 1-1h1.6a1 1 0 0 1 1 1v9.6a1 1 0 0 1-1 1H5.8a1 1 0 0 1-1-1zM15.6 7.2a1 1 0 0 1 1-1h1.6a1 1 0 0 1 1 1v9.6a1 1 0 0 1-1 1h-1.6a1 1 0 0 1-1-1z"/><path class="d" d="M8.4 10.9h7.2v2.2H8.4z"/>' },
+  pushup: { name: ['筋トレ', 'Workout'], svg: '<circle cx="19" cy="6.6" r="2.4"/><path d="M17.2 9.6 3.4 14.8l.8 2.1 11.2-4.2.4 4.6h2.2l-.3-6.4z"/><path class="d" d="M2 19h20v1.8H2z"/>' },
+  book: { name: ['読書', 'Reading'], svg: '<path d="M11 6.2C9 4.8 6.3 4.3 2.5 4.7v13.6c3.8-.4 6.5.1 8.5 1.5z"/><path class="d" d="M13 6.2c2-1.4 4.7-1.9 8.5-1.5v13.6c-3.8-.4-6.5.1-8.5 1.5z"/>' },
+  code: { name: ['開発', 'Coding'], svg: '<path class="d" d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5V16H3z"/><path d="M1 17h22v1.2a1.8 1.8 0 0 1-1.8 1.8H2.8A1.8 1.8 0 0 1 1 18.2z"/><path d="M9.6 7.4 6.8 10l2.8 2.6 1-1.1L9 10l1.6-1.5zM14.4 7.4l2.8 2.6-2.8 2.6-1-1.1L15 10l-1.6-1.5z"/>' },
+  run: { name: ['ランニング', 'Running'], svg: '<path d="M2 15.5c0-1.6 1-2.7 2.6-2.9l3.3-.4 3-5.2 2.8 1.6-.9 2.2c1.4 1.6 3.6 2.4 6.2 2.6 1.7.1 3 1.3 3 2.9V18H2z"/><path class="d" d="M2 19h20.9v1.6H2z"/>' },
+  study: { name: ['勉強', 'Study'], svg: '<path class="d" d="M3 4h11a3 3 0 0 1 3 3v13H6a3 3 0 0 1-3-3z"/><path d="M19.6 2.8l1.6 1.6-9.4 9.4-2.4.8.8-2.4z"/>' },
+  meditate: { name: ['瞑想', 'Meditation'], svg: '<path d="M12 4.5c2.3 2.6 2.3 6.4 0 9.6-2.3-3.2-2.3-7 0-9.6z"/><path class="d" d="M3 9.5c3.6-.2 6.8 1.9 8.4 5.2-3.7.8-7.4-1-8.4-5.2zM21 9.5c-3.6-.2-6.8 1.9-8.4 5.2 3.7.8 7.4-1 8.4-5.2z"/><path d="M4 17.5h16v1.8H4z"/>' },
+  water: { name: ['水', 'Water'], svg: '<path d="M12 2.5c3.7 4.8 6.4 8.1 6.4 11.6a6.4 6.4 0 0 1-12.8 0c0-3.5 2.7-6.8 6.4-11.6z"/>' },
+  sun: { name: ['早起き', 'Early rise'], svg: '<path d="M5.5 16a6.5 6.5 0 0 1 13 0z"/><path class="d" d="M11 4h2v3.5h-2zM3.6 8.1l1.4-1.4 2.5 2.5-1.4 1.4zM16.5 9.2 19 6.7l1.4 1.4-2.5 2.5zM1 17h22v2H1z"/>' },
+  clean: { name: ['掃除', 'Cleaning'], svg: '<path d="M12 2.5l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9z"/><path class="d" d="M18.5 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9zM5 15.5l.7 1.8 1.8.7-1.8.7L5 20.5l-.7-1.8-1.8-.7 1.8-.7z"/>' },
+  star: { name: ['その他', 'Other'], svg: '<path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.4 1.1 6.3L12 17.2l-5.7 3 1.1-6.3-4.6-4.4 6.4-.9z"/>' },
+};
+const art = (key, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${(ART[key] || ART.star).svg}</svg>`;
+const chev = '<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 1.5 6.5 7l-5 5.5"/></svg>';
+const tickSvg = '<svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const G = {
+  met: ['var(--green)', '<path d="M7.2 12.4l3.2 3.2 6.4-6.6"/>', () => L('達成', 'Done')],
+  pend: ['var(--orange)', '<path d="M12 6.8V12l3.4 2.1"/>', () => L('審査中', 'In review')],
+  ex: ['var(--gray)', '<path d="M7.5 12h9"/>', () => L('特例', 'Exception')],
+};
+const glyph = k => `<svg class="g" viewBox="0 0 24 24" role="img" aria-label="${G[k][2]()}"><circle cx="12" cy="12" r="11" style="fill:${G[k][0]}"/><g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${G[k][1]}</g></svg>`;
+const cvar = c => `var(--${c || 'blue'})`;
+const tile = (color, icon) => `<span class="tile" style="background:${color}">${icon}</span>`;
+const goalTile = g => g ? tile(cvar(g.color), art(g.art)) : tile('var(--gray)', I.text);
+
+/* ---------- words for rules ---------- */
+const WD_JA = '日月火水木金土', WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const wd = i => L(WD_JA[i], WD_EN[i]);
+const andList = xs => xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
+const EV = () => ({
+  text: { name: L('文章', 'Text'), sub: L('メモや感想を書いて提出', 'Write a note about what you did'), icon: I.text, color: 'var(--indigo)' },
+  photo: { name: L('写真', 'Photo'), sub: L('アプリのカメラで撮る（指示の手と一緒に）', 'Taken with the in-app camera, with a hand sign'), icon: I.camera, color: 'var(--orange)' },
+  video: { name: L('動画', 'Video'), sub: L('アプリで録画（最長60秒・指示の手から）', 'Recorded in the app (up to 60 s, starts with a hand sign)'), icon: I.video, color: 'var(--pink)' },
+  location: { name: L('場所', 'Place'), sub: L('登録した場所の近くにいる', 'Be near a place you saved'), icon: I.pin, color: 'var(--green)' },
+  github: { name: L('GitHubのpush', 'GitHub push'), sub: L('自動で確認（ほかの条件とは組み合わせ不可）', 'Checked automatically (can’t be combined with others)'), icon: I.code, color: 'var(--teal)' },
+});
+const EV_ORDER = ['text', 'photo', 'video', 'location', 'github'];
+const times = n => n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`;
+const freqText = r => r.period === 'weekly' ? L(`週${r.count}回`, `${times(r.count)} a week`.replace(/^./, c => c.toUpperCase()))
+  : r.period === 'monthly' ? L(`月${r.count}回`, `${times(r.count)} a month`.replace(/^./, c => c.toUpperCase()))
+  : r.days.length === 7 ? L('毎日', 'Every day') : r.days.join() === '1,2,3,4,5' ? L('平日', 'Weekdays') : r.days.join() === '0,6' ? L('土日', 'Weekends')
+  : L(r.days.map(d => WD_JA[d]).join('・'), r.days.map(d => WD_EN[d]).join(', '));
+const ruleText = r => [freqText(r), r.requires.map(x => x === 'github' ? 'GitHub' : EV()[x].name).join('+'), yen(r.penaltyYen)].join(SEP());
+const ACT = r => r.requires.includes('video') ? L('録画', 'Record') : r.requires.includes('photo') ? L('撮影', 'Take Photo') : r.requires.includes('text') ? L('書く', 'Write')
+  : r.requires.includes('location') ? L('チェックイン', 'Check In') : L('確認', 'Check');
+const UNIT_JA = { daily: '日', weekly: '週', monthly: 'か月' }, UNIT_EN = { daily: 'day', weekly: 'week', monthly: 'month' };
+const unitN = (n, p) => L(`${n}${UNIT_JA[p]}`, plural(n, UNIT_EN[p]));          // "3日" / "3 days"
+const streakWord = p => L(`${UNIT_JA[p]}連続`, `${UNIT_EN[p]} streak`);         // after the number
+const periodWord = p => p === 'weekly' ? L('今週', 'this week') : p === 'monthly' ? L('今月', 'this month') : L('今日', 'today');
+const exWord = () => L('特例', 'exception');
+
+/** One sentence saying what counts as done, e.g. "週に2回、「ジム」の近くで写真を撮って提出する。" */
+function condText(r, place) {
+  const q = r.requires || [];
+  if (!q.length) return '';
+  const f = freqText(r);
+  const miss = r.penaltyYen ? L(`できなかったら1回${yen(r.penaltyYen)}。`, ` Each miss costs ${yen(r.penaltyYen)}.`) : '';
+  if (LANG === 'en') {
+    const when = r.period !== 'daily' ? f : f === 'Every day' ? 'Every day' : f === 'Weekdays' ? 'Every weekday' : f === 'Weekends' ? 'Every Saturday and Sunday' : `Every ${andList(r.days.map(d => WD_EN[d]))}`;
+    if (q.includes('github')) return `${when}, push to GitHub (checked automatically).${miss}`;
+    const where = q.includes('location') ? (place ? `near “${place}”` : 'near your saved place') : '';
+    const acts = [q.includes('photo') && 'take a photo', q.includes('video') && 'record a video', q.includes('text') && (r.minChars ? `write at least ${r.minChars} characters` : 'write a note')].filter(Boolean);
+    return acts.length ? `${when}, ${andList(acts)}${where ? ` ${where}` : ''} and submit it.${miss}` : `${when}, check in ${where}.${miss}`;
+  }
+  const when = r.period === 'weekly' ? `週に${r.count}回、` : r.period === 'monthly' ? `月に${r.count}回、` : f === '毎日' ? '毎日、' : f === '平日' || f === '土日' ? `${f}は毎日、` : `${f}曜に、`;
+  if (q.includes('github')) return `${when}GitHubにpushする（自動で確認）。${miss}`;
+  const where = q.includes('location') ? `${place ? `「${place}」` : '登録した場所'}の近くで` : '';
+  const acts = [q.includes('photo') && '写真を撮って', q.includes('video') && '動画を録画して', q.includes('text') && `${r.minChars ? `${r.minChars}文字以上の` : ''}文章を書いて`].filter(Boolean);
+  return `${when}${where}${acts.length ? `${acts.join('、')}提出する` : 'チェックインする'}。${miss}`;
+}
+
+/* ---------- tabs ---------- */
+const TABS = ['today', 'goals', 'ledger', 'settings'];
+const tabTitle = name => ({ today: L('今日', 'Today'), goals: L('目標', 'Goals'), ledger: L('罰金', 'Penalties'), settings: L('設定', 'Settings') })[name];
+let currentTab = 'today';
+// Text that sits in the page's HTML: set here so it follows the language.
+function renderChrome() {
+  document.documentElement.lang = LANG;
+  for (const t of TABS) { $(`#t-${t}`).textContent = tabTitle(t); $(`#tabs [data-go="${t}"] span`).textContent = tabTitle(t); }
+  $('#navbar').textContent = tabTitle(currentTab);
+  $('#tabs').setAttribute('aria-label', L('タブ', 'Tabs'));
+  document.querySelector('.addbtn[data-new-goal]').setAttribute('aria-label', L('目標を追加', 'Add Goal'));
+  $('#capClose').textContent = L('キャンセル', 'Cancel');
+}
+function showTab(name) {
+  document.querySelectorAll('section[data-tab]').forEach(s => s.classList.toggle('on', s.dataset.tab === name));
+  document.querySelectorAll('#tabs button').forEach(b => { b.classList.toggle('on', b.dataset.go === name); b.toggleAttribute('aria-current', b.dataset.go === name); });
+  currentTab = name;
+  $('#navbar').textContent = tabTitle(name);
+  try { localStorage.setItem('tab', name); } catch {}
+  scrollTo(0, 0);
+}
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-go]'); if (b) showTab(b.dataset.go); });
+renderChrome();
+try { const t = localStorage.getItem('tab'); showTab(TABS.includes(t) ? t : 'today'); } catch { showTab('today'); }
+addEventListener('scroll', () => document.body.classList.toggle('scrolled', scrollY > 52), { passive: true });
+
+/* ---------- time (Japan time, whatever the device is set to) ---------- */
+const nowMs = () => Date.now() + skew;
+const J = ms => { const d = new Date(ms + 9 * 36e5); return { mo: d.getUTCMonth() + 1, d: d.getUTCDate(), wd: d.getUTCDay(), h: d.getUTCHours(), mi: d.getUTCMinutes() }; };
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const md = ms => { const j = J(ms); return L(`${j.mo}/${j.d}`, `${MON[j.mo - 1]} ${j.d}`); };
+const hm = ms => { const j = J(ms); return `${j.h}:${String(j.mi).padStart(2, '0')}`; };
+const keyMs = key => Date.parse(`${key.replace(/^[WM]/, '')}${key.startsWith('M') ? '-01' : ''}T12:00:00+09:00`);
+const keyLabel = key => { const j = J(keyMs(key)); return L(`${j.mo}/${j.d}（${WD_JA[j.wd]}）`, `${WD_EN[j.wd]}, ${MON[j.mo - 1]} ${j.d}`); };
+const longDate = ms => { const j = J(ms); return L(`${j.mo}月${j.d}日 ${WD_JA[j.wd]}曜日`, `${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][j.wd]}, ${MON[j.mo - 1]} ${j.d}`); };
+const addDay = (date, n) => new Date(Date.parse(`${date}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+// ja: "明日（11/6（金））", en: "tomorrow" / "Fri, Nov 6"
+const whenText = date => date === addDay(S.today, 1) ? L(`明日（${keyLabel(date)}）`, 'tomorrow') : keyLabel(date);
+const fromWhen = (date, ja, en) => L(`${whenText(date)}から${ja}`, `${en} ${date === addDay(S.today, 1) ? 'tomorrow' : `on ${keyLabel(date)}`}`); // "明日から開始" / "Starts tomorrow"
+
+
+/* ---------- today ---------- */
+const isDone = c => ['met', 'exempt'].includes(c.state) || c.submitted >= c.required;
+const needsPlace = g => g.requires.includes('location') && !g.location?.set;
+const daysLeft = c => Math.round((keyMs(c.lastDate) - keyMs(S.today)) / 864e5) + 1; // today included
+const leftText = ms => { const h = Math.floor(ms / 36e5), m = Math.floor(ms % 36e5 / 6e4); return L(h ? `${h}時間${m}分` : `${m}分`, h ? `${h}h ${m}m` : `${m}m`); };
+const warnSvg = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.3 3.5a2 2 0 0 1 3.4 0l8.5 15a2 2 0 0 1-1.7 3H3.5a2 2 0 0 1-1.7-3zM11 9v5.5h2V9zm1 9.6a1.3 1.3 0 1 0 0-2.6 1.3 1.3 0 0 0 0 2.6z"/></svg>';
+
+// How close the deadline is for a goal not done yet: '' (fine), 'warn' (tonight, under 6 hours, or no spare days left), 'urgent' (under 2 hours).
+function alertOf(g, t = nowMs()) {
+  const c = g.current;
+  if (!g.counts || isDone(c)) return '';
+  const tonight = g.period === 'daily' || c.lastDate === S.today, rem = c.end - t;
+  if (tonight && rem < 2 * 36e5) return 'urgent';
+  if (tonight && rem < 6 * 36e5) return 'warn';
+  if (!tonight && c.required - c.submitted >= daysLeft(c)) return 'warn';
+  return '';
+}
+function cardState(g, alert, t) {
+  const c = g.current, need = c.required - c.submitted;
+  if (!g.counts) return fromWhen(g.startsOn, '', 'Starts');
+  if (c.state === 'met') return g.requires.includes('github') ? L('pushを確認済み', 'Push found') : L('承認済み', 'Approved');
+  if (c.state === 'exempt') return L('特例で休み', 'Day off (exception)');
+  if (c.submitted >= c.required) return L('締め切り前に提出済み', 'Submitted in time');
+  const ex = c.exempted ? L(`・特例${c.exempted}回`, ` · ${plural(c.exempted, 'exception')}`) : '';
+  if (g.period === 'daily' || c.lastDate === S.today) return alert ? '' : L(`${hm(c.end)}まで・${yen(g.penaltyYen * need)}`, `Due ${hm(c.end)} · ${yen(g.penaltyYen * need)}`);
+  const by = g.period === 'monthly' ? md(keyMs(c.lastDate)) : L(WD_JA[J(keyMs(c.lastDate)).wd] + '曜', WD_EN[J(keyMs(c.lastDate)).wd]);
+  return L(`${periodWord(g.period)}あと${need}回・${by}まで${ex}`, `${need} more ${periodWord(g.period)} · by ${by}${ex}`);
+}
+function cardAction(g) {
+  const c = g.current;
+  if (!g.counts) return '';
+  if (c.state === 'met') return `<span class="cbadge">${glyph('met')}${G.met[2]()}</span>`;
+  if (c.state === 'exempt') return `<span class="cbadge">${glyph('ex')}${G.ex[2]()}</span>`;
+  if (c.submitted >= c.required) return `<span class="cbadge">${glyph('pend')}${G.pend[2]()}</span>`;
+  if (g.requires.includes('github')) return `<button class="cbtn" data-gh>${L('pushを確認', 'Check Push')}</button>`;
+  if (needsPlace(g)) return `<button class="cbtn" data-edit="${g.id}">${L('場所を登録', 'Set Place')}</button>`;
+  return `<button class="cbtn" data-cap="${g.id}">${ACT(g)}</button>`;
+}
+function todayCard(g, t = nowMs()) {
+  const st = g.streak || { current: 0 }, period = g.rule.period, lv = level(st.current, period);
+  const alert = alertOf(g, t), c = g.current, need = c.required - c.submitted;
+  const due = alert ? `<span class="due">${warnSvg}${(g.period === 'daily' || c.lastDate === S.today)
+    ? L(`あと${leftText(c.end - t)}・${yen(g.penaltyYen * need)}`, `${leftText(c.end - t)} left · ${yen(g.penaltyYen * need)}`)
+    : L(`残り${daysLeft(c)}日で${need}回`, `${need} in ${plural(daysLeft(c), 'day')}`)}</span>` : '';
+  const look = g.image ? ` photo" style="--c:${cvar(g.color)};--img:url('/media/${esc(g.image)}')` : `" style="--c:${cvar(g.color)}`;
+  const label = L(`${g.title}、${st.current}${streakWord(period)}、${cardState(g, alert, t) || '締め切り間近'}`, `${g.title}, ${st.current} ${streakWord(period)}, ${cardState(g, alert, t) || 'due soon'}`);
+  return `<article class="tcard ${alert ? `a-${alert}` : ''} ${g.counts ? '' : 'soon'}${look}" data-row="${g.id}" role="button" tabindex="0" aria-label="${esc(label)}">
+    ${art(g.art, 'art')}
+    <div class="head"><div><h3>${esc(g.title)}</h3><div class="freq">${esc(freqText(g.rule))}${SEP()}${esc(yen(g.rule.penaltyYen))}</div></div>${cardAction(g)}</div>
+    <div class="foot"><div class="streak">${flame(lv)}<b class="num">${st.current}</b><small>${L('', '&nbsp;')}${streakWord(period)}</small></div>
+      ${due || `<div class="state">${esc(cardState(g, alert, t))}</div>`}</div></article>`;
+}
+const cards = (title, goals) => goals.length ? `<h2 class="h2">${title}</h2><div class="tcards">${goals.map(g => todayCard(g)).join('')}</div>` : '';
+
+function renderToday() {
+  const t = nowMs();
+  const live = S.goals.filter(g => g.status === 'active' && g.counts);
+  const soon = S.goals.filter(g => !g.counts && g.status !== 'paused' && g.startsOn && !g.started);
+  const daily = live.filter(g => g.period === 'daily');
+  const end = (daily[0] || live[0])?.current.end;
+  const open = live.filter(g => !isDone(g.current));
+  // what costs money if nothing changes by tonight's deadline: open daily goals, and weekly/monthly ones on their last day
+  const atStake = open.filter(g => g.period === 'daily' || g.current.lastDate === S.today);
+  const stake = atStake.reduce((a, g) => a + g.penaltyYen * (g.current.required - g.current.submitted), 0);
+  const rank = { urgent: 0, warn: 1, '': 2 };
+  const byAlert = list => [...list].sort((a, b) => rank[alertOf(a, t)] - rank[alertOf(b, t)]);
+
+  let top;
+  if (!S.goals.length) {
+    top = `<div class="card empty-card"><b>${L('目標がまだありません', 'No Goals Yet')}</b><p>${L('何をしたら達成か、どれくらいの頻度か、ミスしたらいくらかを決めて始めます。', 'Decide what counts as done, how often, and what a miss costs.')}</p><button class="big" data-new-goal>${L('目標を追加', 'Add Goal')}</button></div>`;
+  } else {
+    let txt, side = '';
+    if (!live.length) {
+      const first = soon.map(g => g.startsOn).sort()[0];
+      txt = `<div class="k">${L('今日は数える目標なし', 'Nothing counts today')}</div><div class="bigtime">${L('お休み', 'Day Off')}</div>${first ? `<div class="sub">${esc(fromWhen(first, '数えます', 'Counting starts'))}</div>` : ''}`;
+      side = `<div class="stake ok">${L('罰金はかかりません', 'No penalty')}</div>`;
+    } else if (!atStake.length) {
+      txt = `<div class="k">${L('今日の分', 'Today')}</div><div class="bigtime">${L('完了', 'All Done')}</div><div class="sub">${L('次の締め切り', 'Next deadline')} ${md(end + 864e5 - 1)} ${hm(end)}</div>`;
+      side = `<div class="stake ok">${L('罰金はかかりません', 'No penalty')}</div>`;
+    } else {
+      const rem = Math.max(0, end - t), h = Math.floor(rem / 36e5), m = Math.floor(rem % 36e5 / 6e4);
+      txt = `<div class="k">${L('締め切りまで', 'Time left')}</div>
+        <div class="bigtime num ${rem < 4 * 36e5 ? 'hot' : ''}" role="timer">${h ? `${h}<small>${L('時間', 'h')}</small>` : ''}${m}<small>${L('分', 'm')}</small></div>
+        <div class="sub">${L(`${md(end - 1)} ${hm(end)}まで・残り${atStake.length}つ`, `Until ${hm(end)} ${md(end - 1)} · ${atStake.length} to go`)}</div>`;
+      side = `<div class="stake">${L('このままだと', 'At stake')}<br>${yen(stake)}</div>`;
+    }
+    top = `<div class="card summary"><div class="sum-txt">${txt}</div><div class="sum-side">${side}</div></div>`;
+  }
+
+  const unpaid = S.penalties.filter(p => p.status !== 'paid');
+  const owe = unpaid.length ? `<ul class="list" style="margin-top:12px"><li><button class="row" data-go-tab="ledger">${tile('var(--red)', I.yen)}
+      <div class="txt"><b>${L('未払いの罰金', 'Unpaid Penalties')}</b><span>${L(`${unpaid.length}件`, plural(unpaid.length, 'penalty', 'penalties'))}</span></div><span class="money" style="color:var(--red)">${yen(S.unpaidTotal)}</span>${chev}</button></li></ul>` : '';
+
+  const done = live.filter(g => isDone(g.current));
+  const later = open.filter(g => !atStake.includes(g));
+  const note = live.length || soon.length ? `<p class="gf">${L('カードをタップすると、提出・特例・編集ができます。特例を使った日・一時停止中・審査待ちの日は、連続が途切れません。',
+    'Tap a card to submit, use an exception or edit. Exceptions, paused days and days waiting for review don’t break a streak.')}</p>` : '';
+  $('#tonight').innerHTML = top + owe + cards(end ? L(`今夜 ${hm(end)}まで`, `Due Tonight, ${hm(end)}`) : L('今夜まで', 'Due Tonight'), byAlert(atStake)) + cards(L('今週・今月', 'This Week & Month'), byAlert(later))
+    + cards(L('完了', 'Done'), done) + cards(L('これから', 'Coming Up'), soon) + note;
+}
+
+/* ---------- goals tab ---------- */
+// "明日から一時停止" / "Pauses tomorrow"
+const STATE_WORD = () => ({ pause: [L('一時停止', ''), 'Pauses'], resume: [L('再開', ''), 'Resumes'], delete: [L('削除', ''), 'Deleted'], start: [L('開始', ''), 'Starts'] });
+const stateWhen = (date, why) => { const w = STATE_WORD()[why] || [L('変更', ''), 'Changes']; return fromWhen(date, w[0], w[1]); };
+function goalNote(g) {
+  const s = g.scheduled;
+  if (s) return stateWhen(s.date, s.why);
+  if (g.pendingFrom) return fromWhen(g.pendingFrom, 'ルール変更', 'Rules change');
+  if (!g.started && g.startsOn) return fromWhen(g.startsOn, '開始', 'Starts');
+  if (needsPlace(g)) return L('場所が未登録', 'No place set');
+  return '';
+}
+function renderGoals() {
+  const row = g => { const note = goalNote(g);
+    return `<li><button class="row" data-edit="${g.id}">${goalTile(g)}<div class="txt"><b>${esc(g.title)}</b><span>${esc(ruleText(g.rule))}</span>${note ? `<span class="note">${esc(note)}</span>` : ''}</div>${chev}</button></li>`; };
+  const isPaused = g => g.status === 'paused' || g.scheduled?.why === 'pause';
+  const active = S.goals.filter(g => !isPaused(g)), paused = S.goals.filter(isPaused);
+  const ex = S.exemptions;
+  $('#goalList').innerHTML =
+    (active.length ? `<ul class="list">${active.map(row).join('')}</ul>` : `<div class="card empty-card"><b>${L('目標がまだありません', 'No Goals Yet')}</b><p>${L('右上の＋から追加します。', 'Tap + to add one.')}</p><button class="big" data-new-goal>${L('目標を追加', 'Add Goal')}</button></div>`) +
+    `<p class="gf">${L('削除・一時停止・ルールの変更は明日から（週・月の目標は次の週・月から）。今日の分は今のルールのまま数えます。',
+      'Deleting, pausing and rule changes start tomorrow (next week or month for weekly and monthly goals). Today still counts under the current rules.')}</p>` +
+    (paused.length ? `<div class="gh">${L('一時停止中', 'Paused')}</div><ul class="list">${paused.map(row).join('')}</ul>` : '') +
+    `<div class="gh">${L('今月の特例', 'Exceptions This Month')}</div><ul class="list plain">
+      <li class="row"><div class="txt"><b>${L('使った回数', 'Used')}</b></div><span class="val num">${L(`${ex.used} / ${ex.limit}回`, `${ex.used} of ${ex.limit}`)}</span></li>
+      ${ex.list.map(e => `<li class="row"><div class="txt"><b>${esc(e.goalTitle)}</b><span>${esc(md(e.at))}${SEP()}${esc(e.reason)}</span></div></li>`).join('')}
+    </ul><p class="gf">${L(`どうしてもできない日に、月${ex.limit}回まで使えます（全部の目標で合わせて）。今日のリストで目標をタップして使います。毎日の目標はその日が休みに、週・月の目標は必要な回数が1回減ります。嫁にも理由が届きます。`,
+      `For days you really can’t, up to ${ex.limit} a month across all goals. Tap a goal on Today to use one. A daily goal gets the day off; a weekly or monthly goal needs one time fewer. Your wife sees the reason.`)}</p>`;
+}
+
+/* ---------- records: streak cards ---------- */
+const TIERS = { daily: [1, 3, 7, 14, 30, 100], weekly: [1, 2, 4, 8, 16, 52], monthly: [1, 2, 3, 6, 12, 24] };
+const TIER_NAME = () => L(['火種', '点火', '燃えてきた', '勢いがある', '絶好調', '炎上中', '伝説'], ['Spark', 'Lit', 'Warming Up', 'On a Roll', 'On Fire', 'Blazing', 'Legend']);
+const FLAME = [['#8e8e93', '#c7c7cc', '#e5e5ea'], ['#ff9500', '#ffcc00', '#fff3b0'], ['#ff6a00', '#ffb300', '#ffe066'], ['#ff3b30', '#ff9500', '#ffd60a'],
+  ['#ff2d55', '#ff9f0a', '#fff'], ['#af52de', '#ff2d55', '#ffd6f5'], ['#0a84ff', '#64d2ff', '#fff']];
+$('#flameDefs').innerHTML = FLAME.map((c, i) => `<linearGradient id="fl${i}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient>`).join('');
+const level = (n, period) => TIERS[period || 'daily'].filter(x => n >= x).length;
+const flame = lv => `<svg class="flame l${lv}" viewBox="0 0 24 30" aria-hidden="true"><path d="M12.4 1c1 5 7.6 8 7.6 16.3a8 8 0 0 1-16 0c0-4.2 2-6.6 3.3-8.6.5 2.2 1.7 3.5 3.3 3.6C9.5 7.8 11 3.8 12.4 1z" fill="url(#fl${lv})"/><path d="M12 15.2c.6 2.6 3.8 3.7 3.8 7.4a3.8 3.8 0 0 1-7.6 0c0-2 1.1-3.2 1.7-4.1.3 1 .9 1.6 1.7 1.6-.5-2 .1-3.6.4-4.9z" fill="${FLAME[lv][2]}"/></svg>`;
+// The big card, shown at the top of the goal editor. The edit button opens the illustration/color/photo picker.
+function streakCard(g) {
+  const st = g.streak || { current: 0, best: 0, total: 0 }, period = g.rule.period;
+  const lv = level(st.current, period);
+  const meta = st.current ? L(`最高 ${unitN(st.best, period)}・合計 ${st.total}回`, `Best ${unitN(st.best, period)} · ${st.total} total`)
+    : st.best ? L(`最高 ${unitN(st.best, period)}。また火をつけよう`, `Best ${unitN(st.best, period)}. Light it again.`) : L('最初の1回で火がつきます', 'Your first one lights the fire');
+  const look = g.image ? ` photo" style="--c:${cvar(g.color)};--img:url('/media/${esc(g.image)}')` : `" style="--c:${cvar(g.color)}`;
+  return `<article class="scard${look}">
+    ${art(g.art, 'art')}
+    <div class="top"><div style="flex:1"><h3>${esc(g.title || L('名前', 'Name'))}</h3><div class="freq">${esc(freqText(g.rule))}${g.status === 'paused' || g.pausing ? SEP() + L('一時停止', 'Paused') : ''}</div></div></div>
+    <div class="bottom"><span class="flame-badge">${flame(lv)}${TIER_NAME()[lv]}</span>
+      <div class="count num">${st.current}<small>${streakWord(period)}</small></div>
+      <div class="meta">${esc(meta)}</div></div></article>`;
+}
+
+/* ---------- submissions ---------- */
+function subLead(s) {
+  if (s.media) return `<img class="thumb" src="/media/${esc(s.media)}" alt="" loading="lazy">`;
+  if (s.video) return `<video class="thumb" src="/media/${esc(s.video)}" muted playsinline preload="metadata"></video>`;
+  return s.goalId === '_payment' ? tile('var(--green)', I.yen) : goalTile(S.goals.find(g => g.id === s.goalId));
+}
+const VERDICT = () => ({ pending: L('審査待ち', 'In Review'), approved: L('承認', 'Approved'), rejected: L('却下', 'Rejected') });
+let showAllSubs = false;
+function renderRecent() {
+  const subs = showAllSubs ? S.submissions : S.submissions.slice(0, 5);
+  const rows = subs.map(s => {
+    const bits = [s.when, s.gps?.distanceM != null && L(`登録地点から${s.gps.distanceM}m`, `${s.gps.distanceM} m from your place`), s.github?.repo, s.amountYen && L(`支払い ${yen(s.amountYen)}`, `Payment ${yen(s.amountYen)}`),
+      s.reading && `${s.reading.book} ${s.reading.pages}`].filter(Boolean);
+    const text = s.text || s.reading?.memo;
+    return `<li class="row sub-row">${subLead(s)}<div class="txt"><b>${esc(s.goalTitle)}</b><span>${esc(bits.join(SEP()))}</span>
+      ${text ? `<div class="memo">${esc(text)}</div>` : ''}
+      ${(s.flags || []).map(f => `<div class="warn">${esc(f)}</div>`).join('')}
+      ${s.review?.note && s.status === 'rejected' ? `<div class="warn">${esc(s.review.note)}</div>` : ''}</div>
+      <span class="status-t ${s.status}">${VERDICT()[s.status] || ''}</span></li>`;
+  }).join('');
+  const who = S.reviewer === 'codex' ? 'Codex' : 'Claude Code';
+  $('#recent').innerHTML = `<h2 class="h2">${L('提出したもの', 'Submissions')}</h2>` +
+    (subs.length ? `<ul class="list">${rows}${S.submissions.length > subs.length ? `<li><button class="more" data-more-subs>${L(`すべて表示（${S.submissions.length}件）`, `Show All (${S.submissions.length})`)}</button></li>` : ''}</ul>`
+      : `<div class="card empty">${L('まだ何も提出していません', 'Nothing submitted yet')}</div>`) +
+    (S.pendingCount ? `<p class="gf">${S.reviewer && S.reviewer !== 'off'
+      ? L(`審査待ちが${S.pendingCount}件。Mac の ${who} が自動で判定します。`, `${plural(S.pendingCount, 'item')} waiting. ${who} on your Mac reviews them automatically.`)
+      : L(`審査待ちが${S.pendingCount}件。Mac の Claude Code で <code>/yome-review</code> を実行すると判定されます。`, `${plural(S.pendingCount, 'item')} waiting. Run <code>/yome-review</code> in Claude Code on your Mac to review them.`)}</p>` : '');
+}
+
+/* ---------- penalties ---------- */
+function renderLedger() {
+  const due = S.unpaidTotal;
+  const rows = S.penalties.map(p => {
+    const paid = p.status === 'paid', g = S.goals.find(x => x.id === p.goalId);
+    return `<li class="row tap ${paid ? 'struck' : ''}" data-pay="${esc(p.id)}" role="checkbox" aria-checked="${paid}" tabindex="0">
+      <span class="check ${paid ? 'on' : ''}">${checkSvg}</span>${goalTile(g)}
+      <div class="txt"><b>${esc(p.goalTitle)}</b><span>${esc(L(`${p.label}の分${paid ? `・${p.paidAt ? md(p.paidAt) + 'に' : ''}支払い済み` : ''}`, `${p.label}${paid ? ` · Paid${p.paidAt ? ` ${md(p.paidAt)}` : ''}` : ''}`))}</span></div>
+      <span class="money num">${yen(p.amountYen)}</span></li>`;
+  }).join('');
+  $('#ledger').innerHTML = `<div class="card balance"><div class="k">${L('未払い', 'Unpaid')}</div><div class="amt num ${due ? 'due' : ''}">${yen(due)}</div>
+      <div class="sub">${L('これまでに支払った額', 'Paid so far')} ${yen(S.paidTotal)}</div></div>
+    <p class="gf">${due ? L('PayPayで嫁に送ったら、下のリストでチェックを入れます。チェックすると嫁にも通知されます。払うまで毎日通知が届きます。',
+        'After you send it to your wife (PayPay or any way you agreed), check it off below. She’s notified when you do. You’ll get a reminder every day until it’s paid.')
+      : L('未達の日があると、ここに罰金が記録されます。', 'Missed goals show up here as penalties.')}</p>
+    <h2 class="h2">${L('履歴', 'History')}</h2>${S.penalties.length ? `<ul class="list">${rows}</ul>` : `<div class="card empty">${L('罰金はまだありません', 'No penalties yet')}</div>`}`;
+}
+async function togglePaid(li) {
+  const p = S.penalties.find(x => x.id === li.dataset.pay); if (!p) return;
+  const paid = p.status !== 'paid';
+  li.classList.toggle('struck', paid); li.querySelector('.check').classList.toggle('on', paid); li.setAttribute('aria-checked', paid);
+  try { await api('POST', `/api/penalties/${encodeURIComponent(p.id)}/paid`, { paid }); toast(paid ? L('支払い済みにしました', 'Marked as paid') : L('未払いに戻しました', 'Marked as unpaid')); }
+  catch (err) { toast(err.message, 4000); }
+  load();
+}
+
+/* ---------- settings ---------- */
+function renderSettings() {
+  const n = S.ntfy;
+  const topic = (who, key, t, look) => t
+    ? `<li class="row wrap">${tile(...look)}<div class="txt"><b>${who}</b><span><code>${esc(n.server)}/${esc(t)}</code></span></div>
+       <span class="trail"><button class="pill" data-copy="${esc(n.server)}/${esc(t)}">${L('コピー', 'Copy')}</button><button class="pill" data-test="${key}">${L('テスト', 'Test')}</button></span></li>`
+    : `<li class="row">${tile(...look)}<div class="txt"><b>${who}</b><span>${L('未設定。Mac で', 'Not set up. On your Mac, run')} <code>npm run setup</code></span></div></li>`;
+  const reviewer = { claude: 'Claude Code', codex: 'Codex' }[S.reviewer] || L('オフ（手動で /yome-review）', 'Off (run /yome-review yourself)');
+  $('#settings').innerHTML = `
+    <div class="gh">${L('言語', 'Language')}</div>
+    <ul class="list plain"><li class="row"><div class="seg" role="group" aria-label="${L('言語', 'Language')}">
+      <button data-lang="ja" class="${LANG === 'ja' ? 'on' : ''}" aria-pressed="${LANG === 'ja'}">日本語</button><button data-lang="en" class="${LANG === 'en' ? 'on' : ''}" aria-pressed="${LANG === 'en'}">English</button></div></li></ul>
+    <p class="gf">${L('通知も、この言語で届きます。', 'Notifications are sent in this language too.')}</p>
+    <div class="gh">${L('通知の受け取り先（ntfy）', 'Notifications (ntfy)')}</div>
+    <ul class="list">${topic(L('自分', 'You'), 'me', n.meTopic, ['var(--blue)', I.bell])}${topic(L('嫁', 'Wife'), 'wife', n.wifeTopic, ['var(--pink)', I.heart])}</ul>
+    <p class="gf">${L('スマホの ntfy アプリで「+」を押して、上のアドレスを購読します。嫁のアドレスは嫁のスマホで購読してもらいます。', 'In the ntfy app on your phone, tap + and subscribe to the address above. Your wife subscribes to hers on her phone.')}${S.dryRun ? `<b>${L('お試し中なので、嫁宛ての通知もあなたに届きます。', ' Trial mode is on, so messages for your wife come to you instead.')}</b>` : ''}</p>
+    <div class="gh">${L('全体', 'General')}</div>
+    <ul class="list plain">
+      <li class="row"><div class="txt"><b>${L('1日の区切り', 'Day ends at')}</b></div><span class="val">${L(`毎朝 ${esc(S.settings.dayBoundary)}`, `${esc(S.settings.dayBoundary)} each morning`)}</span></li>
+      <li class="row"><div class="txt"><b>${L('特例', 'Exceptions')}</b></div><span class="val">${L(`月${S.exemptions.limit}回（今月あと${S.exemptions.limit - S.exemptions.used}回）`, `${S.exemptions.limit} a month (${S.exemptions.limit - S.exemptions.used} left)`)}</span></li>
+      <li class="row"><div class="txt"><b>${L('審査', 'Reviewed by')}</b><span>${esc(reviewer)}</span></div></li>
+      <li class="row"><div class="txt"><b>${L('モード', 'Mode')}</b></div><span class="val">${S.dryRun ? L('お試し（嫁には届かない）', 'Trial (your wife isn’t notified)') : L('本番', 'Live')}</span></li>
+    </ul>
+    <p class="gf">${L('目標ごとのルール（条件・頻度・罰金・通知時刻）は目標タブで設定します。', 'Each goal’s rules (what counts, how often, penalty, reminders) are set in the Goals tab.')}</p>`;
+}
+
+function renderClock() {
+  const tag = S.fakeClock ? L('体験用', 'Demo') : S.dryRun ? L('お試し', 'Trial') : '';
+  $('#eyebrow').innerHTML = `<span class="num">${esc(longDate(nowMs()))} ${hm(nowMs())}</span>${tag ? `<span class="capsule">${tag}</span>` : ''}`;
+  $('#modeTag').innerHTML = tag ? `<span class="capsule">${tag}</span>` : '';
+}
+function render() {
+  renderChrome(); renderClock(); renderToday(); renderGoals(); renderRecent(); renderLedger(); renderSettings();
+  const n = S.penalties.filter(p => p.status !== 'paid').length;
+  const b = document.querySelector('#tabs [data-go="ledger"]');
+  b.querySelector('.badge')?.remove();
+  if (n) b.insertAdjacentHTML('beforeend', `<span class="badge" aria-label="${L(`未払い${n}件`, `${n} unpaid`)}">${n}</span>`);
+}
+const busy = () => $('#cap').classList.contains('on') || $('#sheet').classList.contains('on');
+async function load() {
+  try { S = await api('GET', '/api/state'); skew = S.now - Date.now(); LANG = S.settings?.lang === 'en' ? 'en' : 'ja'; render(); }
+  catch (e) { toast(e.message); }
+}
+setInterval(() => { if (S) { renderToday(); renderClock(); } }, 30000);
+setInterval(() => { if (!busy()) load(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && !busy()) load(); });
+
+/* ---------- action sheet and page sheet ---------- */
+function actionSheet({ title, message, actions }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'as-wrap';
+  wrap.innerHTML = `<div class="as" role="dialog" aria-modal="true"><div class="as-group">${title || message ? `<div class="as-title">${title ? `<b>${esc(title)}</b>` : ''}${esc(message || '')}</div>` : ''}
+    ${actions.map((a, i) => `<button data-i="${i}" class="${a.role || ''}" ${a.disabled ? 'disabled' : ''}>${esc(a.label)}</button>`).join('')}</div>
+    <div class="as-group"><button class="cancel" data-i="-1">${L('キャンセル', 'Cancel')}</button></div></div>`;
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button[data-i]');
+    if (!b && e.target !== wrap) return;
+    wrap.remove();
+    if (b && b.dataset.i !== '-1') actions[b.dataset.i].fn();
+  });
+  document.body.append(wrap);
+  wrap.querySelector('button:not(:disabled)')?.focus();
+}
+
+const sheet = { onRight: null, onClose: null, validate: null };
+function openSheet({ title, right = '', onRight, body, onClose, left = L('キャンセル', 'Cancel') }) {
+  Object.assign(sheet, { onRight, onClose, validate: null });
+  $('#sheetTitle').textContent = title;
+  $('#sheetLeft').textContent = left;
+  $('#sheetRight').textContent = right; $('#sheetRight').hidden = !right; $('#sheetRight').disabled = false;
+  $('#sheetBody').innerHTML = body; $('#sheetBody').scrollTop = 0;
+  $('#sheet').classList.add('on'); document.body.classList.add('locked');
+}
+function closeSheet() {
+  $('#sheet').classList.remove('on'); document.body.classList.remove('locked');
+  const f = sheet.onClose; Object.assign(sheet, { onRight: null, onClose: null, validate: null }); f?.();
+}
+$('#sheetLeft').addEventListener('click', () => closeSheet());
+$('.sheet-backdrop').addEventListener('click', () => closeSheet());
+$('#sheetRight').addEventListener('click', async () => {
+  const b = $('#sheetRight'); if (!sheet.onRight || b.disabled) return;
+  b.disabled = true;
+  try { await sheet.onRight(); } catch (err) { toast(err.message, 4500); } finally { b.disabled = false; sheet.validate?.(); }
+});
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('#sheet').classList.contains('on') && !$('.as-wrap')) closeSheet(); });
+
+/* ---------- actions on the page ---------- */
+const goalOf = id => S.goals.find(g => g.id === id);
+document.addEventListener('click', async e => {
+  if (e.target.closest('#cap, #tabs, #sheet, .as-wrap')) return;
+  const pay = e.target.closest('[data-pay]');
+  if (pay) return togglePaid(pay);
+  const t = e.target.closest('button');
+  if (!t) { const row = e.target.closest('[data-row]'); if (row) rowMenu(goalOf(row.dataset.row)); return; }
+  try {
+    if (t.dataset.goTab) return showTab(t.dataset.goTab);
+    if ('moreSubs' in t.dataset) { showAllSubs = true; return renderRecent(); }
+    if ('newGoal' in t.dataset) return openEditor(null);
+    if (t.dataset.edit) return openEditor(goalOf(t.dataset.edit));
+    if (t.dataset.cap) return openCapture(goalOf(t.dataset.cap));
+    if ('gh' in t.dataset) { t.disabled = true; return checkPush(); }
+    if (t.dataset.lang) { if (t.dataset.lang === LANG) return; await api('PUT', '/api/settings', { lang: t.dataset.lang }); LANG = t.dataset.lang; return load(); }
+    if (t.dataset.copy) { await navigator.clipboard.writeText(t.dataset.copy); return toast(L('コピーしました', 'Copied')); }
+    if (t.dataset.test) { await api('POST', '/api/notify/test', { to: t.dataset.test }); return toast(L('テスト通知を送りました', 'Test notification sent')); }
+  } catch (err) { toast(err.message, 4000); } finally { if (t.isConnected) t.disabled = false; }
+});
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset?.pay) { e.preventDefault(); togglePaid(e.target); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset?.row && e.target === document.activeElement) { e.preventDefault(); rowMenu(goalOf(e.target.dataset.row)); }
+});
+
+// Tapping a goal in today's list: submit, use an exception, or edit.
+function rowMenu(g) {
+  if (!g) return;
+  const left = S.exemptions.limit - S.exemptions.used;
+  const canAct = g.counts && !isDone(g.current);
+  const actions = [];
+  if (canAct && g.requires.includes('github')) actions.push({ label: L('pushを確認して提出', 'Check Push and Submit'), fn: () => checkPush(g) });
+  if (canAct && !g.requires.includes('github') && !needsPlace(g)) actions.push({ label: L(`${ACT(g)}して提出`, `${ACT(g)} and Submit`), fn: () => openCapture(g) });
+  if (canAct) actions.push({ label: L(`特例を使う（今月あと${left}回）`, `Use an Exception (${left} left)`), disabled: left <= 0, fn: () => openExemption(g) });
+  actions.push({ label: L('目標を編集', 'Edit Goal'), fn: () => openEditor(g) });
+  actionSheet({ title: g.title, message: condText(g.counts ? g : g.rule, g.location?.name), actions });
+}
+
+// GitHub goals: look for today's push now instead of waiting for the next automatic check (every 15 minutes).
+async function checkPush() {
+  toast(L('GitHub を確認中…', 'Checking GitHub…'), 20000);
+  try {
+    const r = await api('POST', '/api/github/check');
+    toast(r.created ? L('pushを確認しました。達成です', 'Push found. Done for today.') : L('まだpushが見つかりません。pushしてから1〜2分後にもう一度試してください', 'No push found yet. Try again a minute or two after you push.'), 4500);
+  } catch (err) { toast(err.message, 5000); }
+  load();
+}
+
+function openExemption(g) {
+  const left = S.exemptions.limit - S.exemptions.used, c = g.current;
+  const what = g.period === 'daily' ? L(`${keyLabel(c.key)}の「${g.title}」を休みにします。`, `“${g.title}” gets ${keyLabel(c.key)} off.`)
+    : L(`${periodWord(g.period)}の「${g.title}」の必要回数を1回減らします（${c.count - c.exempted}回 → ${c.count - c.exempted - 1}回）。`,
+      `“${g.title}” needs one time fewer ${periodWord(g.period)} (${c.count - c.exempted} → ${c.count - c.exempted - 1}).`);
+  openSheet({
+    title: L('特例を使う', 'Use an Exception'), right: L('使う', 'Use'),
+    body: `<div class="gh">${L('理由（嫁にも届きます）', 'Reason (your wife sees this)')}</div><div class="card"><textarea id="exReason" class="short" placeholder="${L('例：発熱で寝込んでいる', 'e.g. In bed with a fever')}" aria-label="${L('理由', 'Reason')}"></textarea></div>
+      <p class="gf">${esc(what)} ${L(`今月あと${left}回（使うと${left - 1}回）。`, `${left} left this month (${left - 1} after this).`)}</p>`,
+    onRight: async () => {
+      await api('POST', '/api/exemptions', { goalId: g.id, reason: $('#exReason').value });
+      closeSheet(); toast(L('特例を使いました', 'Exception used')); load();
+    },
+  });
+  sheet.validate = () => { $('#sheetRight').disabled = !$('#exReason').value.trim(); };
+  $('#exReason').addEventListener('input', sheet.validate); sheet.validate();
+  setTimeout(() => $('#exReason')?.focus(), 350);
+}
+
+/* ---------- goal editor ---------- */
+const TEMPLATES = () => [
+  { title: L('ジム', 'Gym'), art: 'gym', color: 'orange', photo: L('指示どおりの手とジムの中（マシンやトレーニングスペース）が一緒に写っている。', 'The hand sign and the inside of the gym (machines or the workout area) in one shot.'), place: L('いつものジム', 'My gym'), rule: { requires: ['photo', 'location'], period: 'weekly', count: 2, penaltyYen: 3000 } },
+  { title: L('筋トレ', 'Push-ups'), art: 'pushup', color: 'pink', video: L('最初に指示の手を見せてから、腕立てを10回以上。胸がしっかり下がった回だけ数える。体全体が写っている。', 'Show the hand sign first, then 10 or more push-ups. Only reps with the chest all the way down count. Whole body in frame.'), rule: { requires: ['video'], period: 'daily', penaltyYen: 3000 } },
+  { title: L('読書', 'Reading'), art: 'book', color: 'indigo', prompt: L('本のタイトル、読んだページ、何が書いてあってどう思ったか。一般論ではなく具体的に', 'Book title, pages read, what it said and what you think. Be specific, not generic.'), rule: { requires: ['text'], period: 'daily', penaltyYen: 3000, minChars: 80 } },
+  { title: L('開発', 'Coding'), art: 'code', color: 'teal', rule: { requires: ['github'], period: 'daily', penaltyYen: 3000 } },
+  { title: L('ランニング', 'Running'), art: 'run', color: 'green', photo: L('ランニング後の様子（ウェアや外の景色）が写っている。', 'You after the run (running gear, outdoors).'), rule: { requires: ['photo'], period: 'weekly', count: 3, penaltyYen: 2000 } },
+  { title: L('早起き', 'Early Rise'), art: 'sun', color: 'yellow', photo: L('朝7時までに、指示の手と外の景色が写っている。', 'Before 7 a.m.: the hand sign and the view outside.'), rule: { requires: ['photo'], period: 'daily', days: [1, 2, 3, 4, 5], penaltyYen: 1000 } },
+  { title: L('カフェで勉強', 'Study at a Café'), art: 'study', color: 'brown', place: L('いつものカフェ', 'My café'), rule: { requires: ['location'], period: 'daily', days: [1, 2, 3, 4, 5], penaltyYen: 1000 } },
+  { title: L('部屋の掃除', 'Tidy Up'), art: 'clean', color: 'mint', photo: L('片付けたあとの部屋全体が写っている。', 'The whole room after tidying.'), rule: { requires: ['photo'], period: 'monthly', count: 2, penaltyYen: 2000 } },
+];
+let ed = null;
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+const blankRule = () => ({ requires: [], period: 'daily', count: 1, days: [...ALL_DAYS], penaltyYen: 3000, minChars: 80 });
+function editorState(g) {
+  if (!g) return { id: null, goal: null, title: '', art: 'star', color: 'blue', reminders: ['20:00', '22:00', '24:00'], prompt: '', photo: '', video: '', place: { radiusM: 200, set: false, name: '' }, repos: '', rule: blankRule(), image: null, styling: false };
+  return { id: g.id, goal: g, title: g.title, art: g.art, color: g.color, reminders: [...(g.reminders || [])], prompt: g.text?.prompt || '',
+    photo: g.photo?.prompt || '', video: g.video?.prompt || '', styling: false,
+    place: { radiusM: g.location?.radiusM || 200, set: !!g.location?.set, name: g.location?.name || '' }, repos: (g.github?.excludeRepos || []).join(', '),
+    rule: { ...blankRule(), ...JSON.parse(JSON.stringify(g.rule)), minChars: g.rule.requires.includes('text') ? g.rule.minChars : 80 }, image: g.image };
+}
+function openEditor(g) {
+  ed = editorState(g);
+  openSheet({ title: g ? L('目標を編集', 'Edit Goal') : L('新しい目標', 'New Goal'), right: g ? L('保存', 'Save') : L('追加', 'Add'), body: '<div id="edBody"></div>', onRight: saveGoal, onClose: () => { ed = null; } });
+  sheet.validate = () => { $('#sheetRight').disabled = !ed || !ed.title.trim() || !ed.rule.requires.length; };
+  drawEditor();
+}
+const segBtn = (key, val, label, cur) => `<button data-set="${key}" data-val="${val}" class="${String(cur) === String(val) ? 'on' : ''}">${label}</button>`;
+const stepper = (key, d, what) => `<span class="stepper"><button data-step="${key}" data-d="${-d}" aria-label="${L(`${what[0]}を減らす`, `Decrease ${what[1]}`)}">−</button><button data-step="${key}" data-d="${d}" aria-label="${L(`${what[0]}を増やす`, `Increase ${what[1]}`)}">＋</button></span>`;
+function drawEditor() {
+  if (!ed) return;
+  const r = ed.rule, g = ed.goal, req = x => r.requires.includes(x);
+  const freqMode = r.period !== 'daily' ? r.period : r.days.length === 7 ? 'every' : 'days';
+  const startInfo = !g ? L('明日から数えます（週の目標は来週の月曜、月の目標は来月1日から）。', 'Counting starts tomorrow (weekly goals: next Monday; monthly goals: the 1st of next month).')
+    : g.started ? L(`達成の条件・頻度・罰金の変更は ${whenText(g.changeFrom)}から反映されます。${periodWord(g.period)}の分は今のルールのままです。`,
+      `Changes to what counts, how often and the penalty start ${g.changeFrom === addDay(S.today, 1) ? 'tomorrow' : `on ${keyLabel(g.changeFrom)}`}. ${periodWord(g.period).replace(/^./, c => c.toUpperCase())} keeps the current rules.`)
+    : L('まだ数え始めていないので、変更はすぐ反映されます。', 'Counting hasn’t started yet, so changes apply right away.');
+  const placeTitle = ed.place.coords ? L(`今いる場所を登録します（誤差 ${Math.round(ed.place.coords.accuracy)}m）`, `Use current location (±${Math.round(ed.place.coords.accuracy)} m)`) : ed.place.set ? L('登録済み', 'Place saved') : L('未登録', 'No place yet');
+  const scroll = $('#sheetBody').scrollTop;
+  const cond = condText(r, ed.place.name);
+  const desc = (id, key, ph, what) => `<div class="card"><textarea id="${id}" class="short" maxlength="300" placeholder="${ph}" aria-label="${what}">${esc(ed[key])}</textarea></div>`;
+  $('#edBody').innerHTML = `
+    <div class="mini" id="edPreview">${streakCard({ ...ed, rule: r, streak: g?.streak, status: g?.status, pausing: g?.scheduled?.why === 'pause' })}
+      <button class="card-edit" data-styling aria-expanded="${ed.styling}">${ed.styling ? L('完了', 'Done') : L('編集', 'Edit')}</button></div>
+    ${ed.styling ? `<div class="styler">
+      <div class="gh" style="margin-top:14px">${L('イラスト', 'Illustration')}</div>
+      <div class="card"><div class="pick">${Object.entries(ART).map(([k, a]) => `<button data-art="${k}" class="${ed.art === k ? 'on' : ''}" style="background:${cvar(ed.color)}" aria-label="${L(...a.name)}">${art(k)}</button>`).join('')}</div></div>
+      <div class="gh">${L('色', 'Color')}</div>
+      <div class="card"><div class="pick colors">${['red', 'orange', 'yellow', 'green', 'mint', 'teal', 'blue', 'indigo', 'purple', 'pink', 'brown', 'gray'].map(c => `<button data-color="${c}" class="${ed.color === c ? 'on' : ''}" style="background:${cvar(c)}" aria-label="${c}"></button>`).join('')}</div></div>
+      <div class="gh">${L('写真', 'Photo')}</div>
+      ${g ? `<ul class="list plain"><li class="row"><div class="txt"><b>${ed.image ? L('写真を使っています', 'Using a photo') : L('イラストを使っています', 'Using an illustration')}</b><span>${L('写真にすると、イラストの代わりに背景になります', 'A photo replaces the illustration as the background')}</span></div><button class="pill" data-image>${ed.image ? L('変更', 'Change') : L('選ぶ', 'Choose')}</button>${ed.image ? `<button class="pill" data-image-off>${L('外す', 'Remove')}</button>` : ''}</li></ul>`
+        : `<ul class="list plain"><li class="row"><div class="txt"><span>${L('写真は目標を追加したあとに選べます', 'You can choose a photo after adding the goal')}</span></div></li></ul>`}
+    </div>` : ''}
+    ${!g ? `<div class="gh">${L('テンプレートから', 'Start From a Template')}</div><div class="tmpl">${TEMPLATES().map((t, i) => `<button data-tmpl="${i}">${tile(cvar(t.color), art(t.art))}${esc(t.title)}</button>`).join('')}</div>` : ''}
+
+    <div class="gh">${L('名前', 'Name')}</div>
+    <ul class="list plain"><li class="row"><input id="edTitle" type="text" value="${esc(ed.title)}" placeholder="${L('例：腕立て10回', 'e.g. 10 push-ups')}" maxlength="40" autocomplete="off" aria-label="${L('名前', 'Name')}"></li></ul>
+
+    <h2 class="h2">${L('達成の条件', 'What Counts as Done')}</h2>
+    <p class="cond ${cond ? '' : 'none'}" id="edCond">${esc(cond || L('下から選ぶと、ここに条件のまとめが出ます。', 'Choose below and a summary appears here.'))}</p>
+    <ul class="list">${EV_ORDER.map(k => { const e = EV()[k]; return `<li><button class="row" data-req="${k}" aria-pressed="${req(k)}">${tile(e.color, e.icon)}<div class="txt"><b>${e.name}</b><span>${e.sub}</span></div>${req(k) ? tickSvg : ''}</button></li>`; }).join('')}</ul>
+    <p class="gf">${L('複数選ぶと、1回の提出で全部そろえる必要があります（例：写真＋場所＝その場所で撮った写真）。', 'Pick more than one and a single submission must include them all (e.g. photo + place = a photo taken at that place).')}</p>
+    ${req('photo') ? `<div class="gh">${L('写真：どんな写真？', 'Photo: What Should It Show?')}</div>${desc('edPhoto', 'photo', L('例：指示の手とジムの中が一緒に写っている', 'e.g. The hand sign and the inside of the gym'), L('どんな写真か', 'What the photo shows'))}
+      <p class="gf">${L('アプリのカメラでその場で撮ります（ギャラリーからは選べません）。最初に出る指示（例：右手で3）を一緒に写します。Mac の Claude Code がこの説明どおりか確認します。',
+        'Taken on the spot with the in-app camera (not from your library), together with the hand sign shown on screen (e.g. right hand, 3 fingers). The reviewer on your Mac checks it against this.')}</p>` : ''}
+    ${req('video') ? `<div class="gh">${L('動画：どんな動画？', 'Video: What Should It Show?')}</div>${desc('edVideo', 'video', L('例：腕立てを10回。体全体が写っている', 'e.g. 10 push-ups, whole body in frame'), L('どんな動画か', 'What the video shows'))}
+      <p class="gf">${L('アプリで録画します（最長60秒）。最初に指示の手を見せてから始めます。Claude Code がこの説明どおりか確認します。',
+        'Recorded in the app (up to 60 s), starting with the hand sign. The reviewer on your Mac checks it against this.')}</p>` : ''}
+    ${req('text') ? `<div class="gh">${L('文章：何を書く？', 'Text: What to Write?')}</div>${desc('edPrompt', 'prompt', L('例：読んだページと、何が書いてあってどう思ったか', 'e.g. Pages read, what they said and what you think'), L('何を書くか', 'What to write'))}
+      <ul class="list plain" style="margin-top:12px"><li class="row"><div class="txt"><b>${L('最低文字数', 'Minimum length')}</b><span class="num">${r.minChars ? L(`${r.minChars}文字以上`, `${r.minChars}+ characters`) : L('制限なし', 'No minimum')}</span></div>${stepper('minChars', 10, ['文字数', 'length'])}</li></ul>
+      <p class="gf">${L('キーボードのマイクで話して入力してもOK。具体的か、前に出したものの使い回しでないかを Claude Code が確認します。',
+        'Dictation with the keyboard mic is fine. The reviewer checks that it’s specific and not reused from before.')}</p>` : ''}
+    ${req('location') ? `<div class="gh">${L('場所：どこで？', 'Place: Where?')}</div><ul class="list plain">
+      <li class="row wrap"><div class="txt"><b>${esc(placeTitle)}</b><span>${ed.place.set || ed.place.coords ? L('近くにいるときだけ提出できます', 'You can only submit when you’re nearby') : L('その場所に行って登録します', 'Go there, then save it')}</span></div>
+        <button class="pill" data-place>${ed.place.set || ed.place.coords ? L('今の場所に変更', 'Update to Here') : L('今いる場所を登録', 'Use Current Location')}</button></li>
+      <li class="row"><span class="lbl w">${L('名前', 'Name')}</span><input id="edPlaceName" type="text" value="${esc(ed.place.name)}" placeholder="${L('例：いつものジム', 'e.g. My gym')}" maxlength="60" aria-label="${L('場所の名前', 'Place name')}"></li>
+      <li class="row"><span class="lbl w">${L('範囲', 'Radius')}</span><div class="seg">${[100, 200, 300, 500].map(m => segBtn('radius', m, `${m}m`, ed.place.radiusM)).join('')}</div></li></ul>
+      <p class="gf">${L('提出するときにスマホの位置を確認します。', 'Your phone’s location is checked when you submit. ')}${req('photo') || req('video') || req('text') ? '' : L('場所だけの目標は、近くにいればチェックインで提出できます。', 'For a place-only goal, checking in nearby is the submission. ')}${L('場所を変えると嫁にも通知されます。', 'Your wife is told when the place changes.')}</p>` : ''}
+    ${req('github') ? `<div class="gh">${L('GitHub：どのリポジトリ？', 'GitHub: Which Repositories?')}</div><ul class="list plain"><li class="row"><span class="lbl w">${L('数えない', 'Ignore')}</span><input id="edRepos" type="text" value="${esc(ed.repos)}" placeholder="${L('owner/repo（自動バックアップ用など）', 'owner/repo (e.g. automatic backups)')}" aria-label="${L('数えないリポジトリ', 'Repositories to ignore')}"></li></ul>
+      <p class="gf">${L('GitHub にpushすると自動で達成になります。時刻は GitHub 側の記録で判定します。', 'A push to GitHub counts automatically. The time comes from GitHub’s own record.')}</p>` : ''}
+
+    <h2 class="h2">${L('頻度と罰金', 'Frequency & Penalty')}</h2>
+    <div class="gh" style="margin-top:8px">${L('頻度', 'Frequency')}</div>
+    <ul class="list plain">
+      <li class="row"><div class="seg">${segBtn('freq', 'every', L('毎日', 'Daily'), freqMode)}${segBtn('freq', 'days', L('曜日', 'Days'), freqMode)}${segBtn('freq', 'weekly', L('週', 'Weekly'), freqMode)}${segBtn('freq', 'monthly', L('月', 'Monthly'), freqMode)}</div></li>
+      ${freqMode === 'days' ? `<li class="row"><div class="days">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button data-day="${d}" class="${r.days.includes(d) ? 'on' : ''}" aria-pressed="${r.days.includes(d)}" aria-label="${WD_EN[d]}">${L(WD_JA[d], WD_EN[d].slice(0, 2))}</button>`).join('')}</div></li>` : ''}
+      ${r.period !== 'daily' ? `<li class="row"><div class="txt"><b class="num">${L(`${r.period === 'weekly' ? '週に' : '月に'} ${r.count} 回`, `${plural(r.count, 'time')} a ${r.period === 'weekly' ? 'week' : 'month'}`)}</b><span>${r.period === 'weekly' ? L('月曜3:00〜翌月曜3:00', 'Monday 3:00 to next Monday 3:00') : L('1日3:00〜翌月1日3:00', 'The 1st, 3:00 to the next 1st, 3:00')}</span></div>${stepper('count', 1, ['回数', 'count'])}</li>` : ''}
+    </ul>
+
+    <div class="gh">${L('罰金', 'Penalty')}</div>
+    <ul class="list plain">
+      <li class="row"><div class="txt"><b>${L('1回ミスするごとに', 'Per miss')}</b><span class="money num" style="color:var(--red)">${yen(r.penaltyYen)}</span></div>${stepper('penaltyYen', 500, ['罰金', 'penalty'])}</li>
+      <li class="row"><div class="chips">${[500, 1000, 3000, 5000, 10000].map(v => `<button class="chip ${r.penaltyYen === v ? 'sel' : ''}" data-yen="${v}">${yen(v)}</button>`).join('')}</div></li>
+    </ul>
+    ${r.period !== 'daily' ? `<p class="gf">${L(`${r.period === 'weekly' ? '週' : '月'}の終わりに、足りない回数 × ${yen(r.penaltyYen)}。`, `At the end of each ${r.period === 'weekly' ? 'week' : 'month'}: each missing time × ${yen(r.penaltyYen)}.`)}</p>` : ''}
+
+    <div class="gh">${L('通知する時刻', 'Reminders')}</div>
+    <ul class="list plain"><li class="row"><div class="chips">${ed.reminders.map(t => `<span class="chip">${esc(t)}<button data-rm-rem="${esc(t)}" aria-label="${L(`${esc(t)}を消す`, `Remove ${esc(t)}`)}">×</button></span>`).join('')}
+      <label class="chip add">＋ <input type="time" id="edRemAdd" aria-label="${L('時刻を追加', 'Add time')}"></label></div></li></ul>
+    <p class="gf">${r.period === 'daily' ? L('まだ出していない日に通知します。', 'Sent on days you haven’t submitted yet. ') : L('最終日に通知します。足りなくなりそうな日は朝にも知らせます。', 'Sent on the last day, plus a morning heads-up when you’re running out of days. ')}${L('24:00 は夜中の0時、3:00より前は翌朝です。', '24:00 is midnight; times before 3:00 are the next morning.')}</p>
+
+    <p class="gf" style="margin-top:20px">${esc(startInfo)}</p>
+    ${g ? stateControls(g) : ''}`;
+  $('#sheetBody').scrollTop = scroll;
+  sheet.validate?.();
+}
+function stateControls(g) {
+  const s = g.scheduled;
+  const sched = s ? `<li class="row"><div class="txt"><b>${esc(L(`${stateWhen(s.date, s.why)}します`, stateWhen(s.date, s.why)))}</b></div>${s.why === 'start' ? '' : `<button class="tlink" data-state="cancel">${L('取り消す', 'Undo')}</button>`}</li>` : '';
+  const pause = g.status === 'paused'
+    ? (s?.why === 'resume' ? '' : `<li><button class="row" data-state="resume"><span class="tlink">${L('再開する', 'Resume')}</span></button></li>`)
+    : (s && s.why !== 'start' ? '' : `<li><button class="row" data-state="pause"><span class="tlink">${L('一時停止する', 'Pause')}</span></button></li>`);
+  const del = s?.why === 'delete' ? '' : `<li><button class="row" data-state="delete"><span class="tlink red">${L('目標を削除', 'Delete Goal')}</span></button></li>`;
+  return `<div class="gh">${L('この目標', 'This Goal')}</div><ul class="list plain">${sched}${pause}${del}</ul>
+    <p class="gf">${g.started ? L(`一時停止・削除は明日から（${periodWord(g.period)}の分は数えます）。`, `Pausing and deleting start tomorrow (${periodWord(g.period)} still counts). `)
+      : L('まだ数え始めていないので、一時停止・削除はすぐに反映されます。', 'Counting hasn’t started, so pausing and deleting apply right away. ')}${L('一時停止中は連続記録が途切れません。どちらも嫁に通知されます。', 'A pause doesn’t break your streak. Your wife is told either way.')}</p>`;
+}
+
+// Editor input: text fields update the draft quietly; buttons redraw.
+$('#sheetBody').addEventListener('input', e => {
+  if (!ed) return;
+  const map = { edTitle: 'title', edPhoto: 'photo', edVideo: 'video', edPrompt: 'prompt', edRepos: 'repos' };
+  if (map[e.target.id]) ed[map[e.target.id]] = e.target.value;
+  if (e.target.id === 'edPlaceName') { ed.place.name = e.target.value; const c = $('#edCond'); if (c && ed.rule.requires.length) c.textContent = condText(ed.rule, ed.place.name); }
+  if (e.target.id === 'edTitle') { const h = $('#edPreview h3'); if (h) h.textContent = e.target.value || L('名前', 'Name'); sheet.validate?.(); }
+});
+$('#sheetBody').addEventListener('change', e => {
+  if (!ed || e.target.id !== 'edRemAdd' || !e.target.value) return;
+  const [h, m] = e.target.value.split(':').map(Number);
+  const t = `${h === 0 ? 24 : h}:${String(m).padStart(2, '0')}`;
+  const order = s => { const [x, y] = s.split(':').map(Number); return (x < 3 ? x + 24 : x) * 60 + y; };
+  if (!ed.reminders.includes(t)) ed.reminders = [...ed.reminders, t].sort((a, b) => order(a) - order(b)).slice(0, 6);
+  drawEditor();
+});
+$('#sheetBody').addEventListener('click', async e => {
+  if (!ed) return;
+  const b = e.target.closest('button'); if (!b) return;
+  const r = ed.rule, d = b.dataset;
+  if (d.tmpl) {
+    const t = TEMPLATES()[d.tmpl];
+    Object.assign(ed, { title: t.title, art: t.art, color: t.color, photo: t.photo || '', video: t.video || '', prompt: t.prompt || '' });
+    ed.place.name = t.place || '';
+    ed.rule = { ...blankRule(), ...JSON.parse(JSON.stringify(t.rule)) };
+  } else if (d.req) {
+    const k = d.req, on = r.requires.includes(k);
+    if (k === 'github') r.requires = on ? [] : ['github'];
+    else r.requires = on ? r.requires.filter(x => x !== k) : [...r.requires.filter(x => x !== 'github'), k];
+  } else if (d.set === 'freq') {
+    if (d.val === 'every') Object.assign(r, { period: 'daily', days: [...ALL_DAYS], count: 1 });
+    else if (d.val === 'days') Object.assign(r, { period: 'daily', days: r.period === 'daily' && r.days.length < 7 ? r.days : [1, 2, 3, 4, 5], count: 1 });
+    else Object.assign(r, { period: d.val, count: r.period === d.val ? r.count : d.val === 'weekly' ? 3 : 1 });
+  } else if (d.set === 'radius') ed.place.radiusM = Number(d.val);
+  else if (d.day) {
+    const n = Number(d.day);
+    if (r.days.includes(n) && r.days.length === 1) return toast(L('曜日は1つ以上選びます', 'Pick at least one day'));
+    r.days = r.days.includes(n) ? r.days.filter(x => x !== n) : [...r.days, n].sort();
+  } else if (d.step) {
+    const lim = { minChars: [0, 2000], count: [1, r.period === 'weekly' ? 7 : 31], penaltyYen: [0, 100000] }[d.step];
+    r[d.step] = Math.min(lim[1], Math.max(lim[0], (r[d.step] || 0) + Number(d.d)));
+  } else if (d.yen) r.penaltyYen = Number(d.yen);
+  else if (d.rmRem) ed.reminders = ed.reminders.filter(x => x !== d.rmRem);
+  else if ('styling' in d) ed.styling = !ed.styling;
+  else if (d.art) ed.art = d.art;
+  else if (d.color) ed.color = d.color;
+  else if ('place' in d) {
+    b.disabled = true; toast(L('位置を取得中…', 'Finding your location…'), 20000);
+    try { const p = await bestPosition(12000); ed.place.coords = p; toast(L(`位置を取得しました（誤差 ${Math.round(p.accuracy)}m）。保存すると登録されます`, `Location found (±${Math.round(p.accuracy)} m). Save to keep it.`), 3500); }
+    catch (err) { toast(err.message, 4000); }
+  } else if ('image' in d) return $('#imageFile').click();
+  else if ('imageOff' in d) { await api('POST', `/api/goals/${ed.id}/image`, { image: null }); ed.image = null; toast(L('写真を外しました', 'Photo removed')); load(); }
+  else if (d.state) return goalState(ed.goal, d.state);
+  else return;
+  drawEditor();
+});
+$('#imageFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !ed?.id) return;
+  try { const r = await api('POST', `/api/goals/${ed.id}/image`, { image: await fileToJpeg(f) }); ed.image = r.image; toast(L('カードの写真を変えました', 'Card photo updated')); drawEditor(); load(); }
+  catch (err) { toast(err.message, 4000); }
+});
+
+async function saveGoal() {
+  const r = ed.rule;
+  const rule = { requires: r.requires, period: r.period, count: r.count, days: r.days, penaltyYen: r.penaltyYen, minChars: r.requires.includes('text') ? r.minChars : 0 };
+  const body = { title: ed.title, art: ed.art, color: ed.color, reminders: ed.reminders, text: { prompt: ed.prompt }, photo: { prompt: ed.photo }, video: { prompt: ed.video },
+    github: { excludeRepos: ed.repos }, rule,
+    location: { radiusM: ed.place.radiusM, name: ed.place.name, ...(ed.place.coords || {}) } };
+  if (ed.id) {
+    const res = await api('PUT', `/api/goals/${ed.id}`, body);
+    toast(res.ruleFrom && !['now', 'unchanged'].includes(res.ruleFrom) ? L(`保存しました。ルールは${whenText(res.ruleFrom)}から変わります`, `Saved. ${fromWhen(res.ruleFrom, '', 'The new rules start')}.`) : L('保存しました', 'Saved'), 3500);
+  } else {
+    await api('POST', '/api/goals', body);
+    toast(L(`「${ed.title}」を追加しました`, `Added “${ed.title}”`));
+  }
+  closeSheet(); load();
+}
+function goalState(g, what) {
+  const run = async () => {
+    try {
+      const r = await api('POST', `/api/goals/${g.id}/state`, { what });
+      const msg = { cancel: L('取り消しました', 'Undone'), resume: r.date ? L(`${whenText(r.date)}から再開します`, `${stateWhen(r.date, 'resume')}`) : L('一時停止を取り消しました', 'Pause canceled'),
+        pause: r.date === S.today ? L('一時停止しました', 'Paused') : L(`${whenText(r.date)}から一時停止します`, stateWhen(r.date, 'pause')),
+        delete: r.date === S.today ? L('削除しました', 'Deleted') : L(`${whenText(r.date)}から削除されます`, `Will be deleted ${r.date === addDay(S.today, 1) ? 'tomorrow' : `on ${keyLabel(r.date)}`}`) }[what];
+      closeSheet(); toast(msg, 3500); load();
+    } catch (err) { toast(err.message, 4000); }
+  };
+  if (what === 'delete') {
+    return actionSheet({ title: L(`「${g.title}」を削除`, `Delete “${g.title}”?`), message: g.started ? L(`明日から数えなくなります。${periodWord(g.period)}の分は数えます。嫁にも通知されます。`, `It stops counting tomorrow; ${periodWord(g.period)} still counts. Your wife is told.`)
+      : L('まだ数え始めていないので、すぐに削除されます。', 'Counting hasn’t started, so it’s deleted right away.'),
+      actions: [{ label: L('目標を削除', 'Delete Goal'), role: 'destructive', fn: run }] });
+  }
+  if (what === 'pause') return actionSheet({ title: L(`「${g.title}」を一時停止`, `Pause “${g.title}”?`), message: g.started ? L(`明日から数えません（${periodWord(g.period)}の分は数えます）。再開するまで連続記録はそのまま残ります。`, `It stops counting tomorrow (${periodWord(g.period)} still counts). Your streak is kept until you resume.`)
+    : L('まだ数え始めていないので、すぐに止まります。再開すると次の日から数えます。', 'Counting hasn’t started, so it pauses now. When you resume, it counts from the next day.'), actions: [{ label: L('一時停止する', 'Pause'), fn: run }] });
+  run();
+}
+
+/* ---------- helpers: images and location ---------- */
+function canvasJpeg(src, w, h, max = 1280) {
+  const k = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.82);
+}
+function fileToJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve(canvasJpeg(img, img.naturalWidth, img.naturalHeight, 1600)); };
+    img.onerror = () => reject(new Error(L('画像を読み込めませんでした', 'Couldn’t read the image')));
+    img.src = url;
+  });
+}
+// Watches the position for a while and keeps the most accurate reading.
+function bestPosition(ms, onUpdate) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error(L('この端末では位置情報が使えません', 'Location isn’t available on this device')));
+    let best = null;
+    const id = navigator.geolocation.watchPosition(p => {
+      const r = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy, at: p.timestamp };
+      if (!best || r.accuracy < best.accuracy) best = r;
+      onUpdate?.(best);
+      if (best.accuracy <= 25) finish();
+    }, err => { if (!best) { navigator.geolocation.clearWatch(id); clearTimeout(timer); reject(new Error(err.code === 1 ? L('位置情報が許可されていません。ブラウザの設定で許可してください', 'Location access is off. Allow it in your browser settings.') : L('位置情報を取得できませんでした', 'Couldn’t get your location'))); } },
+    { enableHighAccuracy: true, maximumAge: 0, timeout: ms });
+    const finish = () => { navigator.geolocation.clearWatch(id); clearTimeout(timer); best ? resolve(best) : reject(new Error(L('位置情報を取得できませんでした', 'Couldn’t get your location'))); };
+    const timer = setTimeout(finish, ms);
+  });
+}
+
+/* ---------- submitting ---------- */
+// One submission carries everything the goal asks for: first the photo or video (Camera-app screen), then a
+// sheet with what was taken, the text box and the place check, which sends it all together.
+const cap = { goal: null, ticket: null, stream: null, recorder: null, chunks: [], blob: null, photo: null, gps: null, gpsErr: null, facing: 'environment', timer: null, started: 0, frames: [] };
+const capStatus = (msg, err) => { const s = $('#capStatus'); s.textContent = msg || ''; s.classList.toggle('err', !!err); };
+const capButtons = html => { $('#capButtons').innerHTML = html; };
+const needs = x => !!cap.goal?.requires.includes(x);
+const cameraButtons = id => capButtons(`<div class="row3"><span></span><button class="shutter ${id === 'shoot' ? 'photo' : 'video'}" id="${id}" aria-label="${id === 'shoot' ? L('撮影', 'Take Photo') : L('録画', 'Record')}"></button><button class="flip" id="flip" aria-label="${L('カメラ切替', 'Switch Camera')}">${I.flip}</button></div>`);
+const afterButtons = (back, label) => capButtons(`<div class="row3"><button class="tbtn" id="${back}">${L('撮り直す', 'Retake')}</button><span></span><button class="tbtn strong" id="useIt">${label}</button></div>`);
+const gpsText = () => cap.gps ? L(`位置OK（誤差 ${Math.round(cap.gps.accuracy)}m）`, `Location OK (±${Math.round(cap.gps.accuracy)} m)`) : cap.gpsErr || L('位置を確認中…', 'Checking location…');
+
+async function openCapture(goal) {
+  if (!goal) return;
+  Object.assign(cap, { goal, ticket: null, blob: null, photo: null, gps: null, gpsErr: null, chunks: [], frames: [] });
+  try { cap.ticket = (await api('POST', '/api/tickets', { goalId: goal.id })).ticket; }
+  catch (e) { cap.goal = null; return toast(e.message, 4000); }
+  if (needs('location')) {
+    const mine = cap.ticket.id, alive = () => cap.ticket?.id === mine;
+    bestPosition(20000, p => { if (alive()) { cap.gps = p; onGps(); } })
+      .then(p => { if (alive()) { cap.gps = p; onGps(); } })
+      .catch(e => { if (alive() && !cap.gps) { cap.gpsErr = e.message; onGps(); } });
+  }
+  if (needs('photo') || needs('video')) return openCamera();
+  openSubmitSheet();
+}
+function onGps() {
+  if ($('#cap').classList.contains('on') && !cap.photo && !cap.blob) capStatus(gpsText(), !!cap.gpsErr);
+  const el = $('#gpsRow'); if (el) el.outerHTML = gpsRow();
+  sheet.validate?.();
+}
+
+async function openCamera() {
+  const g = cap.goal;
+  $('#capTitle').textContent = g.title;
+  $('#capInstr').innerHTML = cap.ticket.instruction ? `<small>${L('最初にカメラに見せる', 'Show the camera first')}</small><span>${esc(cap.ticket.instruction)}</span>` : '';
+  $('#capInstr').hidden = !cap.ticket.instruction;
+  $('#capHowto').textContent = (needs('video') ? g.video?.prompt : g.photo?.prompt) || g.howto || '';
+  $('#capImg').hidden = true; $('#capPlay').hidden = true; $('#capVideo').hidden = false;
+  $('#cap').classList.add('on'); document.body.classList.add('locked');
+  capStatus(''); capButtons('');
+  await startCamera();
+  if (!cap.stream) return; // the camera error is already shown
+  capStatus(needs('location') ? gpsText() : needs('video') ? L('最長60秒。全体が写る位置にスマホを置いてください', 'Up to 60 s. Set the phone where it can see everything.') : '', !!cap.gpsErr);
+  cameraButtons(needs('video') ? 'recBtn' : 'shoot');
+}
+async function startCamera() {
+  stopCamera();
+  try {
+    cap.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cap.facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    $('#capVideo').srcObject = cap.stream;
+  } catch (e) {
+    capStatus(location.protocol === 'https:' || location.hostname === '127.0.0.1' || location.hostname === 'localhost'
+      ? L('カメラを使えません。カメラがない端末か、ブラウザでカメラが許可されていません。', 'Can’t use the camera. This device has none, or camera access is off in the browser.')
+      : L('カメラは https のアドレス（Tailscale の https://…）で開いたときだけ使えます。', 'The camera only works when the app is opened from its https:// address (Tailscale).'), true);
+  }
+}
+function stopCamera() { cap.stream?.getTracks().forEach(t => t.stop()); cap.stream = null; }
+function hideCamera() {
+  if (cap.recorder?.state === 'recording') cap.recorder.stop();
+  clearInterval(cap.timer); clearInterval(cap.frameTimer); stopCamera(); $('#capRec').classList.remove('on');
+  $('#cap').classList.remove('on'); if (!$('#sheet').classList.contains('on')) document.body.classList.remove('locked');
+}
+function endCapture() {
+  hideCamera();
+  const play = $('#capPlay'); if (play.src) { URL.revokeObjectURL(play.src); play.removeAttribute('src'); }
+  cap.goal = null; cap.ticket = null;
+}
+$('#capClose').addEventListener('click', () => { endCapture(); load(); });
+
+$('#cap').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b || b.id === 'capClose') return;
+  try {
+    if (b.id === 'flip') { cap.facing = cap.facing === 'environment' ? 'user' : 'environment'; return startCamera(); }
+    if (b.id === 'shoot') {
+      const v = $('#capVideo'); if (!v.videoWidth) return;
+      cap.photo = canvasJpeg(v, v.videoWidth, v.videoHeight);
+      $('#capImg').src = cap.photo; $('#capImg').hidden = false; v.hidden = true;
+      return afterButtons('retake', needs('text') ? L('次へ', 'Next') : L('写真を提出', 'Use Photo'));
+    }
+    if (b.id === 'retake') { $('#capImg').hidden = true; $('#capVideo').hidden = false; cap.photo = null; return cameraButtons('shoot'); }
+    if (b.id === 'recBtn') return cap.recorder?.state === 'recording' ? cap.recorder.stop() : startRecording();
+    if (b.id === 'redo') { $('#capPlay').hidden = true; $('#capVideo').hidden = false; cap.blob = null; await startCamera(); return cameraButtons('recBtn'); }
+    if (b.id === 'useIt') {
+      if (needs('text')) { openSubmitSheet(); return hideCamera(); }
+      if (needs('location') && !cap.gps) return capStatus(cap.gpsErr || L('位置がまだ取れていません。少し待ってからもう一度押してください', 'No location yet. Wait a moment and try again.'), true);
+      b.disabled = true;
+      await sendSubmission(s => capStatus(s));
+      endCapture(); toast(L('提出しました。審査を待っています', 'Submitted. Waiting for review.')); load();
+    }
+  } catch (err) { capStatus(err.message, true); b.disabled = false; }
+});
+
+function startRecording() {
+  if (!cap.stream) return capStatus(L('カメラが起動していません', 'The camera isn’t on'), true);
+  const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find(t => MediaRecorder.isTypeSupported?.(t)) || '';
+  cap.chunks = [];
+  cap.recorder = new MediaRecorder(cap.stream, { mimeType: type, videoBitsPerSecond: 1_500_000 });
+  cap.recorder.ondataavailable = e => e.data.size && cap.chunks.push(e.data);
+  cap.recorder.onstop = () => {
+    clearInterval(cap.timer); clearInterval(cap.frameTimer); cap.stoppedAt = Date.now(); $('#capRec').classList.remove('on'); $('#recBtn')?.classList.remove('recording');
+    if (!cap.goal) return;
+    cap.blob = new Blob(cap.chunks, { type: (type || 'video/webm').split(';')[0] });
+    stopCamera();
+    const play = $('#capPlay'); play.src = URL.createObjectURL(cap.blob); play.hidden = false; $('#capVideo').hidden = true;
+    capStatus(L('指示の手とやったことが写っていれば提出してください', 'Submit if it shows the hand sign and what you did.'));
+    afterButtons('redo', needs('text') ? L('次へ', 'Next') : L('動画を提出', 'Use Video'));
+  };
+  cap.recorder.start(1000);
+  cap.started = Date.now();
+  cap.frames = [];
+  const grab = () => {
+    const v = $('#capVideo'); if (!v.videoWidth || cap.recorder?.state !== 'recording') return;
+    const c = document.createElement('canvas'); c.width = 320; c.height = Math.round(320 * v.videoHeight / v.videoWidth);
+    c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+    cap.frames.push({ c, sec: Math.round((Date.now() - cap.started) / 1000) });
+  };
+  grab(); cap.frameTimer = setInterval(grab, 1000);
+  $('#recBtn').classList.add('recording');
+  $('#capRec').classList.add('on');
+  cap.timer = setInterval(() => {
+    const s = Math.floor((Date.now() - cap.started) / 1000);
+    $('#capRec').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    if (s >= 60 && cap.recorder.state === 'recording') cap.recorder.stop();
+  }, 250);
+  capStatus(L('録画中。もう一度押すと止まります', 'Recording. Tap again to stop.'));
+}
+
+// 12 frames (4x3) per sheet, each labeled with its second, in time order.
+function contactSheets(frames = []) {
+  const sheets = [];
+  for (let i = 0; i < frames.length && sheets.length < 6; i += 12) {
+    const part = frames.slice(i, i + 12), w = 320, h = part[0].c.height;
+    const c = document.createElement('canvas'); c.width = w * 4; c.height = h * Math.ceil(part.length / 4);
+    const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height);
+    part.forEach((f, j) => {
+      const x = (j % 4) * w, y = Math.floor(j / 4) * h;
+      g.drawImage(f.c, x, y);
+      g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x, y, 54, 24);
+      g.fillStyle = '#fff'; g.font = 'bold 16px sans-serif'; g.fillText(`${f.sec}s`, x + 6, y + 18);
+    });
+    sheets.push(c.toDataURL('image/jpeg', 0.72));
+  }
+  return sheets;
+}
+
+const gpsRow = () => `<li class="row" id="gpsRow">${tile(cap.gps ? 'var(--green)' : cap.gpsErr ? 'var(--red)' : 'var(--gray)', I.pin)}
+  <div class="txt"><b>${esc(cap.goal?.location?.name || L('登録した場所', 'Your saved place'))}</b><span>${esc(gpsText())}</span></div></li>`;
+function openSubmitSheet() {
+  const g = cap.goal;
+  let draft = '';
+  try { draft = localStorage.getItem(`draft-${g.id}`) || ''; } catch {}
+  const onlyPlace = g.requires.length === 1 && needs('location');
+  const media = cap.photo ? `<img class="preview-media" src="${cap.photo}" alt="${L('撮った写真', 'Your photo')}">` : cap.blob ? `<video class="preview-media" src="${$('#capPlay').src}" controls playsinline></video>` : '';
+  openSheet({
+    title: g.title, right: onlyPlace ? L('チェックイン', 'Check In') : L('提出', 'Submit'),
+    body: `${media ? `<div class="gh">${cap.photo ? L('写真', 'Photo') : L('動画', 'Video')}</div><div class="card">${media}</div>` : ''}
+      ${needs('text') ? `<div class="gh">${L('文章', 'Text')}</div><div class="card"><textarea id="subText" aria-label="${L('文章', 'Text')}" placeholder="${esc(g.text?.prompt || L('何をしたか、どう思ったか', 'What you did and what you think'))}${L('。キーボードのマイクで話しても入力できます', '. You can dictate with the keyboard mic.')}">${esc(draft)}</textarea></div>
+        <p class="gf"><span class="chars" id="subCount"></span></p>` : ''}
+      ${needs('location') ? `<div class="gh">${L('場所', 'Place')}</div><ul class="list">${gpsRow()}</ul>` : ''}
+      <p class="gf" style="margin-top:16px">${esc(condText(g, g.location?.name))}</p>`,
+    onRight: async () => {
+      await sendSubmission(s => toast(s, 20000));
+      closeSheet(); toast(onlyPlace ? L('チェックインしました。審査を待っています', 'Checked in. Waiting for review.') : L('提出しました。審査を待っています', 'Submitted. Waiting for review.')); load();
+    },
+    onClose: () => endCapture(),
+  });
+  sheet.validate = () => {
+    if (!cap.goal) return;
+    let ok = true;
+    if (needs('text')) {
+      const n = $('#subText').value.replace(/\s/g, '').length, min = g.minChars || 0;
+      $('#subCount').textContent = n >= min ? L(`${n}文字`, plural(n, 'character')) : L(`${n}文字（あと${min - n}文字）`, `${plural(n, 'character')} (${min - n} more)`);
+      $('#subCount').classList.toggle('ok', n >= min);
+      ok = ok && n >= Math.max(1, min);
+    }
+    if (needs('location')) ok = ok && !!cap.gps;
+    $('#sheetRight').disabled = !ok;
+  };
+  $('#subText')?.addEventListener('input', () => { try { localStorage.setItem(`draft-${g.id}`, $('#subText').value); } catch {} sheet.validate(); });
+  sheet.validate();
+}
+
+async function sendSubmission(progress) {
+  const g = cap.goal;
+  if (cap.blob) {
+    progress(L(`動画を送信中…（${(cap.blob.size / 1e6).toFixed(1)}MB）`, `Uploading video… (${(cap.blob.size / 1e6).toFixed(1)} MB)`));
+    const dur = Math.round((cap.stoppedAt - cap.started) / 1000);
+    await api('POST', `/api/upload?goalId=${encodeURIComponent(g.id)}&ticketId=${encodeURIComponent(cap.ticket.id)}&duration=${dur}`, undefined, cap.blob);
+  }
+  progress(L('送信中…', 'Sending…'));
+  const { submission } = await api('POST', '/api/submit', { goalId: g.id, ticketId: cap.ticket.id, text: $('#subText')?.value, image: cap.photo || undefined, gps: cap.gps || undefined });
+  // contact sheets of the frames, so the review on the Mac can see the reps without a video tool
+  if (cap.blob) await api('POST', `/api/submissions/${submission.id}/sheets`, { sheets: contactSheets(cap.frames) }).catch(() => {});
+  try { localStorage.removeItem(`draft-${g.id}`); } catch {}
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "name": "yomepay",
+  "version": "0.1.0",
+  "description": "Goals checked by evidence, not checkboxes. Miss one and a penalty goes to your wife. Self-hosted on your Mac; evidence reviewed by your own Claude Code or Codex.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test test/*.test.js",
+    "check": "for f in server/*.js server/payments/*.js scripts/*.mjs; do node --check \"$f\" || exit 1; done",
+    "hooks": "git config core.hooksPath .githooks",
+    "review": "node scripts/review.mjs",
+    "setup-ntfy": "node scripts/setup-ntfy.mjs",
+    "go-live": "node scripts/go-live.mjs",
+    "demo": "node scripts/demo.mjs",
+    "setup": "node scripts/setup.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "review:auto": "bash scripts/auto-review.sh"
+  }
+}

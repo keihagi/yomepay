@@ -1,0 +1,12 @@
+#!/bin/sh
+# Blocks commits that look like personal data or secrets. Enable with: npm run hooks
+bad=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)(data|media|submissions|penalties|settlements|exemptions|challenges|notifications|review-frames)/|(^|/)goals\.json$|secrets\.json$|\.env$|\.key$|\.pem$|\.(jpg|jpeg|png|webm|mp4)$' | grep -v '^public/icon' )
+if [ -n "$bad" ]; then
+  echo "Refusing to commit files that look like personal data or secrets:"
+  echo "$bad"
+  exit 1
+fi
+if git diff --cached -U0 | grep -E '^\+' | grep -qiE '(sk-ant-[a-z0-9-]{10,}|sk-[A-Za-z0-9]{32,}|AIza[0-9A-Za-z_-]{35}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|gho_[A-Za-z0-9]{30,}|yomepay-(me|wife)-[0-9a-f]{16,})'; then
+  echo "Refusing to commit: the change contains something that looks like a key or an ntfy topic."
+  exit 1
+fi
