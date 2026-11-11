@@ -59,7 +59,8 @@ export function createScheduler({ store, notifier, goalsRepo, fetchPushes, now, 
     if (!force && t - lastGithubAt < 15 * MIN) return { ok: githubOk, created: [] };
     lastGithubAt = t;
     try {
-      const created = await syncPushes({ store, goals, settings, pushes: await fetchPushes(), now });
+      const named = goals.filter(usesGithub).flatMap(g => g.github?.accounts || []); // accounts a goal names itself
+      const created = await syncPushes({ store, goals, settings, pushes: await fetchPushes(named), now });
       githubOk = true;
       return { ok: true, created };
     } catch (e) {

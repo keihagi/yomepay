@@ -943,15 +943,29 @@ const TEMPLATES = () => [
 let ed = null;
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 const blankRule = () => ({ requires: [], period: 'daily', count: 1, days: [...ALL_DAYS], penaltyYen: 3000, minChars: 80 });
+const ghLogins = s => [...new Set(String(s || '').split(/[\s,]+/).map(x => x.trim().replace(/^@/, '').toLowerCase()).filter(Boolean))];
+function ghDefaultsText() {
+  const d = ghInfo?.defaults || [];
+  return d.length ? L(`空欄＝${d.join(', ')}`, `Empty = ${d.join(', ')}`) : L('例：my-name, work-name', 'e.g. my-name, work-name');
+}
+// Accounts gh isn't signed in to can only be read through their public feed.
+function ghPublicOnlyNote() {
+  if (!ghInfo) return '';
+  const out = ghLogins(ed.accounts).filter(a => !ghInfo.signedIn.includes(a));
+  return out.length ? L(`<br>※ ${esc(out.join(', '))} は Mac の gh でログインしていないので、公開リポジトリへのpushだけ数えます（非公開も数えるには Mac で gh auth login）。`,
+    `<br>Note: gh on the Mac isn’t signed in as ${esc(out.join(', '))}, so only pushes to public repositories count (to include private ones, run gh auth login on the Mac).`) : '';
+}
 function editorState(g) {
-  if (!g) return { id: null, goal: null, title: '', art: 'star', color: 'blue', reminders: ['20:00', '22:00', '24:00'], prompt: '', photo: '', video: '', place: { radiusM: 200, set: false, name: '' }, repos: '', rule: blankRule(), image: null, styling: false };
+  if (!g) return { id: null, goal: null, title: '', art: 'star', color: 'blue', reminders: ['20:00', '22:00', '24:00'], prompt: '', photo: '', video: '', place: { radiusM: 200, set: false, name: '' }, repos: '', accounts: '', rule: blankRule(), image: null, styling: false };
   return { id: g.id, goal: g, title: g.title, art: g.art, color: g.color, reminders: [...(g.reminders || [])], prompt: g.text?.prompt || '',
     photo: g.photo?.prompt || '', video: g.video?.prompt || '', styling: false,
-    place: { radiusM: g.location?.radiusM || 200, set: !!g.location?.set, name: g.location?.name || '' }, repos: (g.github?.excludeRepos || []).join(', '),
+    place: { radiusM: g.location?.radiusM || 200, set: !!g.location?.set, name: g.location?.name || '' }, repos: (g.github?.excludeRepos || []).join(', '), accounts: (g.github?.accounts || []).join(', '),
     rule: { ...blankRule(), ...JSON.parse(JSON.stringify(g.rule)), minChars: g.rule.requires.includes('text') ? g.rule.minChars : 80 }, image: g.image };
 }
+let ghInfo = null; // { signedIn, defaults }: the accounts gh can read on the Mac
 function openEditor(g) {
   ed = editorState(g);
+  if (!ghInfo) api('GET', '/api/github/accounts').then(r => { ghInfo = r; if (ed?.rule.requires.includes('github')) drawEditor(); }).catch(() => {});
   openSheet({ title: g ? L('目標を編集', 'Edit Goal') : L('新しい目標', 'New Goal'), right: g ? L('保存', 'Save') : L('追加', 'Add'), body: '<div id="edBody"></div>', onRight: saveGoal, onClose: () => { ed = null; } });
   sheet.validate = () => { $('#sheetRight').disabled = !ed || !ed.title.trim() || !ed.rule.requires.length; };
   drawEditor();
@@ -1007,8 +1021,11 @@ function drawEditor() {
       <li class="row"><span class="lbl w">${L('名前', 'Name')}</span><input id="edPlaceName" type="text" value="${esc(ed.place.name)}" placeholder="${L('例：いつものジム', 'e.g. My gym')}" maxlength="60" aria-label="${L('場所の名前', 'Place name')}"></li>
       <li class="row"><span class="lbl w">${L('範囲', 'Radius')}</span><div class="seg">${[100, 200, 300, 500].map(m => segBtn('radius', m, `${m}m`, ed.place.radiusM)).join('')}</div></li></ul>
       <p class="gf">${L('提出するときにスマホの位置を確認します。', 'Your phone’s location is checked when you submit. ')}${req('photo') || req('video') || req('text') ? '' : L('場所だけの目標は、近くにいればチェックインで提出できます。', 'For a place-only goal, checking in nearby is the submission. ')}${L('場所を変えると嫁にも通知されます。', 'Your wife is told when the place changes.')}</p>` : ''}
-    ${req('github') ? `<div class="gh">${L('GitHub：どのリポジトリ？', 'GitHub: Which Repositories?')}</div><ul class="list plain"><li class="row"><span class="lbl w">${L('数えない', 'Ignore')}</span><input id="edRepos" type="text" value="${esc(ed.repos)}" placeholder="${L('owner/repo（自動バックアップ用など）', 'owner/repo (e.g. automatic backups)')}" aria-label="${L('数えないリポジトリ', 'Repositories to ignore')}"></li></ul>
-      <p class="gf">${L('GitHub にpushすると自動で達成になります。時刻は GitHub 側の記録で判定します。', 'A push to GitHub counts automatically. The time comes from GitHub’s own record.')}</p>` : ''}
+    ${req('github') ? `<div class="gh">${L('GitHub：どのアカウント？', 'GitHub: Which Accounts?')}</div><ul class="list plain">
+      <li class="row"><span class="lbl w">${L('アカウント', 'Accounts')}</span><input id="edAccounts" type="text" value="${esc(ed.accounts)}" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${esc(ghDefaultsText())}" aria-label="${L('数えるアカウント', 'Accounts that count')}"></li>
+      <li class="row"><span class="lbl w">${L('数えない', 'Ignore')}</span><input id="edRepos" type="text" value="${esc(ed.repos)}" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${L('owner/repo（自動バックアップ用など）', 'owner/repo (e.g. automatic backups)')}" aria-label="${L('数えないリポジトリ', 'Repositories to ignore')}"></li></ul>
+      <p class="gf">${L('アカウントのどのリポジトリにpushしても達成になります（リポジトリの指定は不要）。アカウントは複数書けて、どれか1つでpushすればOK。空欄なら Mac の gh でログイン中のアカウントが対象です。時刻は GitHub 側の記録で判定します。',
+        'A push to any repository of the account counts — no need to pick a repository. You can list several accounts; a push from any one of them is enough. Leave it empty to use the accounts gh is signed in to on the Mac. The time comes from GitHub’s own record.')}${ghPublicOnlyNote()}</p>` : ''}
 
     <h2 class="h2">${L('頻度と罰金', 'Frequency & Penalty')}</h2>
     <div class="gh" style="margin-top:8px">${L('頻度', 'Frequency')}</div>
@@ -1050,11 +1067,13 @@ function stateControls(g) {
 // Editor input: text fields update the draft quietly; buttons redraw.
 $('#sheetBody').addEventListener('input', e => {
   if (!ed) return;
-  const map = { edTitle: 'title', edPhoto: 'photo', edVideo: 'video', edPrompt: 'prompt', edRepos: 'repos' };
+  const map = { edTitle: 'title', edPhoto: 'photo', edVideo: 'video', edPrompt: 'prompt', edRepos: 'repos', edAccounts: 'accounts' };
   if (map[e.target.id]) ed[map[e.target.id]] = e.target.value;
   if (e.target.id === 'edPlaceName') { ed.place.name = e.target.value; const c = $('#edCond'); if (c && ed.rule.requires.length) c.textContent = condText(ed.rule, ed.place.name); }
   if (e.target.id === 'edTitle') { const h = $('#edPreview h3'); if (h) h.textContent = e.target.value || L('名前', 'Name'); sheet.validate?.(); }
 });
+// After typing accounts, show which ones only count public pushes.
+$('#sheetBody').addEventListener('change', e => { if (ed && e.target.id === 'edAccounts') drawEditor(); });
 $('#sheetBody').addEventListener('change', e => {
   if (!ed || e.target.id !== 'edRemAdd' || !e.target.value) return;
   const [h, m] = e.target.value.split(':').map(Number);
@@ -1114,7 +1133,7 @@ async function saveGoal() {
   const r = ed.rule;
   const rule = { requires: r.requires, period: r.period, count: r.count, days: r.days, penaltyYen: r.penaltyYen, minChars: r.requires.includes('text') ? r.minChars : 0 };
   const body = { title: ed.title, art: ed.art, color: ed.color, reminders: ed.reminders, text: { prompt: ed.prompt }, photo: { prompt: ed.photo }, video: { prompt: ed.video },
-    github: { excludeRepos: ed.repos }, rule,
+    github: { excludeRepos: ed.repos, accounts: ed.accounts }, rule,
     location: { radiusM: ed.place.radiusM, name: ed.place.name, ...(ed.place.coords || {}) } };
   if (ed.id) {
     const res = await api('PUT', `/api/goals/${ed.id}`, body);

@@ -12,7 +12,7 @@ import { ruleAt, withRule, counts, onAt, lastEvent, upcoming, isDeleted, current
 import { createNotifier } from './notify.js';
 import { createScheduler, fileUptime } from './scheduler.js';
 import { createActions } from './actions.js';
-import { fetchPushesWithGh } from './github.js';
+import { fetchPushesWithGh, ghAccounts } from './github.js';
 import { evaluateWindow } from './evaluate.js';
 import { windowFor, businessDate, fmt, fmtDate, windowLabel } from './windows.js';
 import { ticketTtlMs, instructionFor, atPlace, similarity } from './proof.js';
@@ -28,7 +28,7 @@ const actions = createActions({ store, notifier, now });
 const reviewer = createReviewer({ root: ROOT, who: config.reviewer });
 const scheduler = createScheduler({
   store, notifier, goalsRepo, now, uptime: fileUptime(config.dataDir),
-  fetchPushes: fetchPushesWithGh({ ghBin: config.ghBin, user: config.githubUser }),
+  fetchPushes: fetchPushesWithGh({ ghBin: config.ghBin, users: config.githubUsers }),
 });
 
 /* ---------- http helpers ---------- */
@@ -413,6 +413,12 @@ route('PUT', '/api/settings', async req => {
   if (!['ja', 'en'].includes(lang)) throw bad(L('言語は ja か en です', 'The language must be ja or en'));
   await goalsRepo.update(doc => { doc.settings = { ...doc.settings, lang }; });
   return { ok: true };
+});
+
+// For the goal editor: which accounts count when a goal names none, and which ones gh can read privately.
+route('GET', '/api/github/accounts', async () => {
+  const signedIn = await ghAccounts(config.ghBin);
+  return { signedIn, defaults: config.githubUsers.length ? config.githubUsers : signedIn };
 });
 
 route('POST', '/api/github/check', async () => {

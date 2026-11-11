@@ -9,7 +9,8 @@ or Codex** — no API keys, no cloud, no database, no dependencies. Japanese and
 ## What it does
 
 - **Goals** you set in the app: what counts as done — any mix of **text, photo, video and place** in one submission
-  (e.g. a photo taken at the gym), or a **GitHub push** — how often (every day, picked weekdays, N a week, N a month),
+  (e.g. a photo taken at the gym), or a **GitHub push** (to any repository of your account — or of any of your
+  accounts) — how often (every day, picked weekdays, N a week, N a month),
   and the penalty per miss.
 - **Proof that's hard to fake**: photos and videos come only from the in-app camera, start with a random hand sign,
   and are time-stamped by the server. Places are checked by distance and for signs of a faked GPS. Pushes are timed by GitHub.
@@ -58,7 +59,7 @@ the payment step is a plug-in in `server/payments/`.
 自分の Mac で動かし、スマホからは Tailscale で（インターネットに公開せずに）使う。証拠の審査は**自分の Claude Code か Codex**
 がやるので、API キーもクラウドもいらない。日本語・英語対応。
 
-- **目標**はアプリで自由に作る。達成の条件（文章・写真・動画・場所の組み合わせ、または GitHub への push）、頻度（毎日・曜日・週N回・月N回）、1回ミスごとの罰金。
+- **目標**はアプリで自由に作る。達成の条件（文章・写真・動画・場所の組み合わせ、または GitHub への push。アカウントのどのリポジトリでもよく、複数アカウントのどれかで push すれば OK）、頻度（毎日・曜日・週N回・月N回）、1回ミスごとの罰金。
 - **ごまかしにくい証拠**：写真・動画はアプリのカメラでだけ撮れて、最初にランダムな手の指示を写す。場所は距離と位置偽装のサインをチェック。push は GitHub 側の時刻。
 - **審査は Mac で**：Claude Code / Codex が写真・動画（コマ画像）・文章・チェックインを見て承認／却下する。提出すると自動で走る。
 - **締め切りと通知**：毎日の目標は翌朝3:00締め。ntfy で通知。今日タブは目標ごとのカード（連続記録つき）で、締め切りが近いとオレンジ→赤になる。

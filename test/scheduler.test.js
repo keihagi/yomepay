@@ -122,6 +122,28 @@ test('pushes to excluded repos (automatic backups) do not count', async () => {
   assert.equal(s.state, 'missed');
 });
 
+test('a push from any repository of any default account counts', async () => {
+  const goals = [{ id: 'dev', title: '開発', type: 'github', period: 'daily', count: 1, penaltyYen: 3000, reminders: [] }];
+  const pushes = [{ eventId: '1', repo: 'second/side-project', at: jst('2026-10-27T22:00:00'), account: 'second', isDefault: true }];
+  const { at, runFrom, store } = await setup({ goals, pushes });
+  await runFrom('2026-10-27T20:00:00', '2026-10-28T04:10:00');
+  await at('2026-10-28T04:10:00');
+  assert.equal((await store.list('settlements'))[0].state, 'met');
+  assert.equal((await store.list('submissions'))[0].github.account, 'second');
+});
+
+test('a goal that names accounts counts only pushes from those accounts', async () => {
+  const goal = accounts => [{ id: 'dev', title: '開発', type: 'github', period: 'daily', count: 1, penaltyYen: 3000, reminders: [] }]
+    .map(g => ({ ...validate({ goals: [g] }).goals[0], github: { excludeRepos: [], accounts } }));
+  const pushes = [{ eventId: '1', repo: 'other/x', at: jst('2026-10-27T22:00:00'), account: 'other', isDefault: false }];
+  for (const [accounts, state] of [[['main', 'work'], 'missed'], [['main', 'other'], 'met'], [[], 'missed']]) {
+    const { at, runFrom, store } = await setup({ goals: goal(accounts), pushes });
+    await runFrom('2026-10-27T20:00:00', '2026-10-28T04:10:00');
+    await at('2026-10-28T04:10:00');
+    assert.equal((await store.list('settlements'))[0].state, state, `accounts ${accounts.join(',') || '(default)'}`);
+  }
+});
+
 test('approving a payment screenshot marks penalties paid and tells the wife', async () => {
   const { store, notifier, sent, now } = await setup();
   await store.put('penalties', { id: 'pen-pushup--2026-10-27', amountYen: 3000, status: 'unpaid' });

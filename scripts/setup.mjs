@@ -5,7 +5,7 @@
 //   npm run setup                                   # asks what it needs
 //   npm run setup -- --lang en --reviewer claude --yes   # no questions (for Claude Code / Codex doing the setup)
 //
-// Options: --lang ja|en  --reviewer claude|codex|off  --https-port <n>  --github-user <login>  --yes
+// Options: --lang ja|en  --reviewer claude|codex|off  --https-port <n>  --github-user <login[,login]>  --yes
 // What it does: writes .env, makes the data folder (outside this repo), makes your and your wife's ntfy
 // topics, sets the app language, turns on the git hook that blocks committing personal data, and finds
 // the tools it uses (gh, Claude Code / Codex, ffmpeg, Tailscale). It does not start anything; see docs/SETUP.md.
@@ -96,7 +96,8 @@ if (fs.existsSync(path.join(ROOT, '.git'))) { run('git', ['-C', ROOT, 'config', 
 /* ---------- tools ---------- */
 console.log('');
 const gh = which('gh'), ghUser = gh && run(gh, ['api', 'user', '--jq', '.login']);
-ghUser ? ok(`gh: ${ghUser} ${T('（GitHub の目標で使います）', '(used by GitHub goals)')}`)
+const ghAll = gh && run(gh, ['auth', 'status', '--hostname', 'github.com', '--json', 'hosts', '--jq', '[.hosts["github.com"][]? | select(.state == "success") | .login] | join(", ")']);
+ghUser ? ok(`gh: ${ghAll || ghUser} ${T('（GitHub の目標で使います。別のアカウントも数えるなら gh auth login でもう1つログイン）', '(used by GitHub goals. To count another account too, sign it in with gh auth login)')}`)
   : warn(T('gh が未ログイン（GitHub の目標を使うなら: brew install gh && gh auth login）', 'gh is not signed in (for GitHub goals: brew install gh && gh auth login)'));
 reviewerBin ? ok(`${reviewer}: ${reviewerBin}`) : warn(T('審査がオフ: 写真・動画・文章は自分で /yome-review を実行して審査します', 'Reviewer is off: run /yome-review yourself to review photos, videos and texts'));
 which('ffmpeg') ? ok('ffmpeg') : warn(T('ffmpeg なし（任意。動画のコマはスマホ側で作ります。入れるなら brew install ffmpeg）', 'no ffmpeg (optional; the phone makes video frames. To add: brew install ffmpeg)'));

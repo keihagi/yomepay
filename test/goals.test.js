@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validate, makeGoal, changeRule, changeState, cleanRule } from '../server/goals.js';
+import { validate, makeGoal, changeRule, changeState, cleanRule, cleanLooks } from '../server/goals.js';
 import { countedWindows, currentWindow, nextCountedWindow, nextPeriodStart, hasStarted, streak, onAt } from '../server/periods.js';
 import { windowFor, businessDate } from '../server/windows.js';
 
@@ -121,4 +121,13 @@ test('an old goal that has not started yet (real data before 11/1) pauses at onc
   assert.deepEqual(keys(g, '2026-11-05T12:00:00'), []);
   changeState(g, 'resume', { today: '2026-11-02', started: false });
   assert.deepEqual(keys(g, '2026-11-05T12:00:00'), ['2026-11-03', '2026-11-04']);
+});
+
+test('github goals keep a cleaned list of accounts; editing other things keeps it', () => {
+  const g = makeGoal({ title: 'dev', rule: rule({ requires: ['github'] }), github: { accounts: ' Me-Main, @work-acct bad_name! me-main', excludeRepos: 'me-main/backup' } }, '2026-11-01');
+  assert.deepEqual(g.github.accounts, ['me-main', 'work-acct']);
+  assert.deepEqual(g.github.excludeRepos, ['me-main/backup']);
+  assert.deepEqual(cleanLooks({ title: 'dev2' }, g).github.accounts, ['me-main', 'work-acct']);
+  assert.deepEqual(cleanLooks({ github: { excludeRepos: '' } }, g).github.accounts, ['me-main', 'work-acct']); // older page
+  assert.deepEqual(cleanLooks({ github: { excludeRepos: '', accounts: '' } }, g).github.accounts, []);
 });

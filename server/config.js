@@ -32,7 +32,8 @@ export const config = {
   secretsFile: path.resolve(expandHome(env('YOMEPAY_SECRETS', '~/.yomepay/secrets.json'))),
   // While true, messages meant for the wife go to your own topic instead. Turn off after the trial week.
   dryRun: env('YOMEPAY_DRY_RUN', 'true') === 'true',
-  githubUser: env('YOMEPAY_GITHUB_USER', ''), // empty: whoever `gh` is signed in as
+  // Whose pushes count by default, comma-separated. Empty: every account `gh` is signed in to on this Mac.
+  githubUsers: list(env('YOMEPAY_GITHUB_USER', '')),
   ghBin: env('YOMEPAY_GH_BIN', 'gh'),
   ffmpegBin: env('YOMEPAY_FFMPEG_BIN', 'ffmpeg'),
   // Who reviews photos, videos, texts and check-ins: the Mac's own Claude Code or Codex (no API key), or off.

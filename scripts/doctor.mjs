@@ -56,8 +56,9 @@ else {
 }
 const gh = which(config.ghBin);
 const ghUser = gh && run(gh, ['api', 'user', '--jq', '.login']);
+const ghAll = gh && run(gh, ['auth', 'status', '--hostname', 'github.com', '--json', 'hosts', '--jq', '[.hosts["github.com"][]? | select(.state == "success") | .login] | join(", ")']);
 const usesGithub = (goals?.goals || []).some(g => JSON.stringify(g).includes('"github"'));
-(usesGithub ? line : (ok, w, f) => note(w, ok ? '' : f))(!!ghUser, `GitHub (gh)${ghUser ? `: ${config.githubUser || ghUser}` : ''}`, 'brew install gh && gh auth login');
+(usesGithub ? line : (ok, w, f) => note(w, ok ? '' : f))(!!ghUser, `GitHub (gh)${ghUser ? `: ${config.githubUsers.join(', ') || ghAll || ghUser}` : ''}`, 'brew install gh && gh auth login');
 note(`ffmpeg: ${which(config.ffmpegBin) ? 'yes' : 'no (optional; the phone makes video frames)'}`);
 
 console.log(failed ? `\n${failed} thing(s) to fix.` : '\nAll set.');

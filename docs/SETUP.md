@@ -13,7 +13,7 @@ off trial mode, without the user saying so.
 | [Tailscale](https://tailscale.com/download) on the Mac and on your phone, same account | Your phone reaches the Mac privately over HTTPS (never the public internet) |
 | [ntfy](https://ntfy.sh) app on your phone, and on your wife's phone | Reminders for you; penalty messages for her |
 | Claude Code **or** Codex, signed in on the Mac | Reviews photos, videos, texts and check-ins (uses your own sign-in, no API key) |
-| `gh` (GitHub CLI), signed in — only for GitHub goals | Counts your pushes |
+| `gh` (GitHub CLI), signed in — only for GitHub goals | Counts your pushes (any repository; sign in every account that should count) |
 | `ffmpeg` — optional | Cuts video frames on the Mac (otherwise the phone makes them) |
 
 ## 1. On the Mac
@@ -30,7 +30,7 @@ npm run setup
   Setup suggests whichever is installed.
 
 Other options: `--https-port 8443` if something on this Mac already serves HTTPS on 443 (check with
-`tailscale serve status`), `--github-user <login>` if the pushes to count are not the `gh` account's.
+`tailscale serve status`), `--github-user <login>[,<login>]` if the pushes to count are not those of the accounts `gh` is signed in to.
 
 Setup writes `.env`, makes the data folder `~/.yomepay/data` (outside the repo — personal data never goes in the repo),
 makes two long random ntfy topics in `~/.yomepay/secrets.json` (one for you, one for your wife), and turns on a git hook
@@ -51,6 +51,9 @@ The reviewer only reads: it answers with its decisions and the script applies th
 write files or reach the network).
 
 GitHub goals: `brew install gh && gh auth login` (setup and doctor tell you if this is missing).
+A push to any repository of the account counts. If the user has several GitHub accounts, run `gh auth login` once
+per account: every account `gh` is signed in to counts (a push from any one of them is enough), private repositories
+included. A goal can also name its own accounts in the app (goal editor → GitHub → Accounts).
 
 ## 2. On your phone (hand this to the user)
 

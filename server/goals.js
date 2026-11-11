@@ -15,6 +15,7 @@ import path from 'node:path';
 import { businessDate, addDays, parseHM } from './windows.js';
 import { onAt, lastEvent } from './periods.js';
 import { L, setLang } from './i18n.js';
+import { cleanLogins } from './github.js';
 
 export const EVIDENCE = ['text', 'photo', 'video', 'location', 'github'];
 export const PERIODS = ['daily', 'weekly', 'monthly'];
@@ -78,9 +79,13 @@ export function cleanLooks(input = {}, prev = {}) {
     photo: { prompt: has('photo') ? str(input.photo?.prompt, 300) : prev.photo?.prompt || '' },
     video: { prompt: has('video') ? str(input.video?.prompt, 300) : prev.video?.prompt || '' },
     location,
-    github: { excludeRepos: has('github')
-      ? [...new Set((Array.isArray(repos) ? repos : String(repos ?? '').split(/[\s,]+/)).map(r => String(r).trim().toLowerCase()).filter(r => /^[\w.-]+\/[\w.-]+$/.test(r)))]
-      : prev.github?.excludeRepos || [] },
+    github: {
+      excludeRepos: has('github')
+        ? [...new Set((Array.isArray(repos) ? repos : String(repos ?? '').split(/[\s,]+/)).map(r => String(r).trim().toLowerCase()).filter(r => /^[\w.-]+\/[\w.-]+$/.test(r)))]
+        : prev.github?.excludeRepos || [],
+      // Whose pushes count. Empty: the default accounts (every account `gh` is signed in to, or YOMEPAY_GITHUB_USER).
+      accounts: input.github?.accounts !== undefined ? cleanLogins(input.github.accounts) : prev.github?.accounts || [],
+    },
   };
 }
 
@@ -99,7 +104,7 @@ function fromHowto(g, requires) {
 function normalize(g) {
   if (Array.isArray(g.rules)) {
     const rules = [...g.rules].sort((a, b) => (a.from || '').localeCompare(b.from || ''));
-    return { image: null, howto: '', reminders: [], text: { prompt: '' }, photo: { prompt: '' }, video: { prompt: '' }, location: null, github: { excludeRepos: [] }, timeline: [], ...g,
+    return { image: null, howto: '', reminders: [], text: { prompt: '' }, photo: { prompt: '' }, video: { prompt: '' }, location: null, github: { excludeRepos: [], accounts: [] }, timeline: [], ...g,
       ...fromHowto(g, rules.flatMap(r => r.requires || [])), rules };
   }
   const old = LEGACY[g.type] || fail(`goal "${g.id}": unknown type ${g.type}`);
@@ -109,7 +114,7 @@ function normalize(g) {
     photo: { prompt: '' }, video: { prompt: '' }, ...fromHowto(g, old.requires),
     location: g.gps ? { lat: g.gps.lat, lng: g.gps.lng, name: g.gps.name || '', setAt: g.gps.setAt || null, radiusM: g.radiusM || 200 }
       : old.requires.includes('location') ? { radiusM: g.radiusM || 200 } : null,
-    github: { excludeRepos: g.excludeRepos || [] },
+    github: { excludeRepos: g.excludeRepos || [], accounts: [] },
     rules: [{ from: null, ...cleanRule({ requires: old.requires, period: g.period, count: g.count, penaltyYen: g.penaltyYen, minChars: g.minChars }) }],
     timeline: g.active === false ? [{ date: '0000-01-01', on: false, why: 'pause' }] : [],
   };
