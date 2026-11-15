@@ -202,7 +202,7 @@ button.chip { padding: 6px 12px; }
 @keyframes ring { 50% { box-shadow: 0 0 0 2.5px var(--bg), 0 0 0 5px var(--red), 0 0 22px 6px color-mix(in srgb, var(--red) 45%, transparent); } }
 .due { display: inline-flex; align-items: center; gap: 5px; background: #fff; color: var(--orange); text-shadow: none; font-size: 13px; font-weight: 700; padding: 4px 10px 4px 7px; border-radius: 999px; white-space: nowrap; }
 .due svg { width: 15px; height: 15px; }
-.a-urgent .due { background: var(--red); color: #fff; }
+.a-urgent .due, .due.redo { background: var(--red); color: #fff; }
 .tcard.soon { opacity: .72; }
 .tcards + .gf { margin-top: 10px; }
 .more { display: block; width: 100%; text-align: center; color: var(--blue); font-size: 15px; padding: 12px; }
@@ -276,7 +276,29 @@ nav.tabs .badge { position: absolute; top: 3px; left: calc(50% + 6px); min-width
 .chars.ok { color: var(--green); }
 .preview-media { width: 100%; max-height: 260px; object-fit: contain; background: #000; display: block; }
 @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+.tcard.cheer { animation: cheer 1.1s cubic-bezier(.2, .9, .3, 1.25); }
+.tcard.cheer .streak .num { display: inline-block; animation: numpop 1.1s cubic-bezier(.2, .9, .3, 1.4); }
+@keyframes cheer { 0% { transform: scale(.94); box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 70%, transparent); }
+  40% { transform: scale(1.035); box-shadow: 0 0 0 6px color-mix(in srgb, var(--green) 55%, transparent), 0 0 34px 8px color-mix(in srgb, var(--green) 35%, transparent); }
+  100% { transform: none; box-shadow: 0 0 0 0 transparent; } }
+@keyframes numpop { 0%, 20% { transform: scale(1); } 50% { transform: scale(1.45); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .tcard.cheer, .tcard.cheer .streak .num { animation: none; } }
 @keyframes fade { from { opacity: 0; } }
+
+/* alert (a review's verdict): centered, like an iOS alert */
+.alert-wrap { position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,.4); display: grid; place-items: center; padding: 24px; animation: fade .2s; }
+.alert { width: min(100%, 300px); background: var(--as-bg); -webkit-backdrop-filter: saturate(180%) blur(24px); backdrop-filter: saturate(180%) blur(24px); border-radius: 16px; overflow: hidden; text-align: center; animation: pop .32s cubic-bezier(.2, .9, .3, 1.3); }
+.alert-body { padding: 20px 18px 18px; }
+.alert-icon { width: 44px; height: 44px; margin: 0 auto 10px; border-radius: 50%; background: var(--red); color: #fff; display: grid; place-items: center; font-size: 26px; font-weight: 700; line-height: 1; }
+.alert b { display: block; font-size: 17px; font-weight: 600; }
+.alert small { display: block; font-size: 13px; color: var(--label-2); margin-top: 2px; }
+.alert p { font-size: 14px; line-height: 1.4; margin-top: 10px; }
+.alert-btns { display: grid; grid-template-columns: 1fr 1fr; border-top: .5px solid var(--sep); }
+.alert-btns button { min-height: 46px; font-size: 17px; color: var(--blue); }
+.alert-btns button + button { border-left: .5px solid var(--sep); font-weight: 600; }
+.alert-btns button:active { background: var(--fill); }
+@keyframes pop { from { transform: scale(1.15); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .alert-wrap, .alert { animation: none; } }
 
 /* editor bits */
 .cond { font-size: 17px; line-height: 1.5; margin: 0 4px 14px; }
@@ -590,6 +612,7 @@ function cardState(g, alert, t) {
   if (c.state === 'met') return g.requires.includes('github') ? L('pushを確認済み', 'Push found') : L('承認済み', 'Approved');
   if (c.state === 'exempt') return L('特例で休み', 'Day off (exception)');
   if (c.submitted >= c.required) return L('締め切り前に提出済み', 'Submitted in time');
+  if (c.rejected) return L(`却下されました: ${c.rejected.note}`, `Rejected: ${c.rejected.note}`);
   const ex = c.exempted ? L(`・特例${c.exempted}回`, ` · ${plural(c.exempted, 'exception')}`) : '';
   if (g.period === 'daily' || c.lastDate === S.today) return alert ? '' : L(`${hm(c.end)}まで・${yen(g.penaltyYen * need)}`, `Due ${hm(c.end)} · ${yen(g.penaltyYen * need)}`);
   const by = g.period === 'monthly' ? md(keyMs(c.lastDate)) : L(WD_JA[J(keyMs(c.lastDate)).wd] + '曜', WD_EN[J(keyMs(c.lastDate)).wd]);
@@ -603,17 +626,19 @@ function cardAction(g) {
   if (c.submitted >= c.required) return `<span class="cbadge">${glyph('pend')}${G.pend[2]()}</span>`;
   if (g.requires.includes('github')) return `<button class="cbtn" data-gh>${L('pushを確認', 'Check Push')}</button>`;
   if (needsPlace(g)) return `<button class="cbtn" data-edit="${g.id}">${L('場所を登録', 'Set Place')}</button>`;
-  return `<button class="cbtn" data-cap="${g.id}">${ACT(g)}</button>`;
+  return `<button class="cbtn" data-cap="${g.id}">${c.rejected ? L('やり直す', 'Redo') : ACT(g)}</button>`;
 }
 function todayCard(g, t = nowMs()) {
   const st = g.streak || { current: 0 }, period = g.rule.period, lv = level(st.current, period);
   const alert = alertOf(g, t), c = g.current, need = c.required - c.submitted;
-  const due = alert ? `<span class="due">${warnSvg}${(g.period === 'daily' || c.lastDate === S.today)
+  const redo = c.rejected && !isDone(c) && g.counts;
+  const due = redo ? `<span class="due redo">${warnSvg}${L('却下・やり直し', 'Rejected · redo it')}</span>`
+    : alert ? `<span class="due">${warnSvg}${(g.period === 'daily' || c.lastDate === S.today)
     ? L(`あと${leftText(c.end - t)}・${yen(g.penaltyYen * need)}`, `${leftText(c.end - t)} left · ${yen(g.penaltyYen * need)}`)
     : L(`残り${daysLeft(c)}日で${need}回`, `${need} in ${plural(daysLeft(c), 'day')}`)}</span>` : '';
   const look = g.image ? ` photo" style="--c:${cvar(g.color)};--img:url('/media/${esc(g.image)}')` : `" style="--c:${cvar(g.color)}`;
   const label = L(`${g.title}、${st.current}${streakWord(period)}、${cardState(g, alert, t) || '締め切り間近'}`, `${g.title}, ${st.current} ${streakWord(period)}, ${cardState(g, alert, t) || 'due soon'}`);
-  return `<article class="tcard ${alert ? `a-${alert}` : ''} ${g.counts ? '' : 'soon'}${look}" data-row="${g.id}" role="button" tabindex="0" aria-label="${esc(label)}">
+  return `<article class="tcard ${alert ? `a-${alert}` : ''} ${g.counts ? '' : 'soon'} ${cheerIds.has(g.id) ? 'cheer' : ''}${look}" data-row="${g.id}" role="button" tabindex="0" aria-label="${esc(label)}">
     ${art(g.art, 'art')}
     <div class="head"><div><h3>${esc(g.title)}</h3><div class="freq">${esc(freqText(g.rule))}${SEP()}${esc(yen(g.rule.penaltyYen))}</div></div>${cardAction(g)}</div>
     <div class="foot"><div class="streak">${flame(lv)}<b class="num">${st.current}</b><small>${L('', '&nbsp;')}${streakWord(period)}</small></div>
@@ -621,9 +646,14 @@ function todayCard(g, t = nowMs()) {
 }
 const cards = (title, goals) => goals.length ? `<h2 class="h2">${title}</h2><div class="tcards">${goals.map(g => todayCard(g)).join('')}</div>` : '';
 
+// Goals that just got approved since the last render get a short celebration on their card.
+let metSeen = null, cheerIds = new Set();
 function renderToday() {
   const t = nowMs();
   const live = S.goals.filter(g => g.status === 'active' && g.counts);
+  const metNow = new Set(live.filter(g => g.current.state === 'met').map(g => g.id));
+  cheerIds = metSeen ? new Set([...metNow].filter(id => !metSeen.has(id))) : new Set();
+  metSeen = metNow;
   const soon = S.goals.filter(g => !g.counts && g.status !== 'paused' && g.startsOn && !g.started);
   const daily = live.filter(g => g.period === 'daily');
   const end = (daily[0] || live[0])?.current.end;
@@ -816,8 +846,31 @@ function render() {
 }
 const busy = () => $('#cap').classList.contains('on') || $('#sheet').classList.contains('on');
 async function load() {
-  try { S = await api('GET', '/api/state'); skew = S.now - Date.now(); LANG = S.settings?.lang === 'en' ? 'en' : 'ja'; render(); }
+  try { S = await api('GET', '/api/state'); skew = S.now - Date.now(); LANG = S.settings?.lang === 'en' ? 'en' : 'ja'; render(); showRejects(); }
   catch (e) { toast(e.message); }
+}
+// When a review rejects evidence, say so once, right away, with the reason and a way to redo it.
+function showRejects() {
+  if (busy() || $('.as-wrap, .alert-wrap')) return;
+  let seen = [];
+  try { seen = JSON.parse(localStorage.getItem('seenRejects') || '[]'); } catch {}
+  const g = S.goals.find(g => g.current?.rejected && !seen.includes(g.current.rejected.id));
+  if (!g) return;
+  seen = [...seen, g.current.rejected.id].slice(-50);
+  try { localStorage.setItem('seenRejects', JSON.stringify(seen)); } catch {}
+  const wrap = document.createElement('div');
+  wrap.className = 'alert-wrap';
+  wrap.innerHTML = `<div class="alert" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle"><div class="alert-body">
+    <div class="alert-icon" aria-hidden="true">!</div><b id="alertTitle">${L('却下されました', 'Rejected')}</b><small>${esc(g.title)}</small>
+    ${g.current.rejected.note ? `<p>${esc(g.current.rejected.note)}</p>` : ''}</div>
+    <div class="alert-btns"><button data-a="ok">OK</button><button data-a="redo">${L('やり直す', 'Redo')}</button></div></div>`;
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    wrap.remove();
+    if (b.dataset.a === 'redo') openCapture(g); else showRejects();
+  });
+  document.body.append(wrap);
+  wrap.querySelector('[data-a="redo"]').focus();
 }
 setInterval(() => { if (S) { renderToday(); renderClock(); } }, 30000);
 setInterval(() => { if (!busy()) load(); }, 60000);
@@ -865,7 +918,7 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && $('#sheet').classLi
 /* ---------- actions on the page ---------- */
 const goalOf = id => S.goals.find(g => g.id === id);
 document.addEventListener('click', async e => {
-  if (e.target.closest('#cap, #tabs, #sheet, .as-wrap')) return;
+  if (e.target.closest('#cap, #tabs, #sheet, .as-wrap, .alert-wrap')) return;
   const pay = e.target.closest('[data-pay]');
   if (pay) return togglePaid(pay);
   const t = e.target.closest('button');

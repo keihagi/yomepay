@@ -55,7 +55,7 @@ case "$WHO" in
     "$BIN" -p "$PROMPT" --add-dir "$DATA" --strict-mcp-config \
       --allowedTools "Read" \
       --disallowedTools "Bash" "Edit" "Write" "NotebookEdit" "WebFetch" "WebSearch" "Task" \
-      > "$OUT" ;;
+      < /dev/null > "$OUT" ;;
   codex)
     # Read-only sandbox (no writes, no network); the images are attached directly.
     ARGS=()

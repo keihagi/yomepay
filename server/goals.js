@@ -110,7 +110,7 @@ function normalize(g) {
   const old = LEGACY[g.type] || fail(`goal "${g.id}": unknown type ${g.type}`);
   return {
     id: g.id, title: g.title, art: old.art, color: old.color, image: null, howto: g.howto || '', reminders: g.reminders || [],
-    text: { prompt: g.type === 'reading' ? '本のタイトル、読んだページ、何が書いてあってどう思ったか' : '' },
+    text: { prompt: g.text?.prompt || (g.type === 'reading' ? L('本のタイトル、読んだページ、何が書いてあってどう思ったか', 'Book title, the pages you read, what it said and what you think') : '') },
     photo: { prompt: '' }, video: { prompt: '' }, ...fromHowto(g, old.requires),
     location: g.gps ? { lat: g.gps.lat, lng: g.gps.lng, name: g.gps.name || '', setAt: g.gps.setAt || null, radiusM: g.radiusM || 200 }
       : old.requires.includes('location') ? { radiusM: g.radiusM || 200 } : null,
