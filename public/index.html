@@ -1009,8 +1009,8 @@ function ghPublicOnlyNote() {
     `<br>Note: gh on the Mac isn’t signed in as ${esc(out.join(', '))}, so only pushes to public repositories count (to include private ones, run gh auth login on the Mac).`) : '';
 }
 function editorState(g) {
-  if (!g) return { id: null, goal: null, title: '', art: 'star', color: 'blue', reminders: ['20:00', '22:00', '24:00'], prompt: '', photo: '', video: '', place: { radiusM: 200, set: false, name: '' }, repos: '', accounts: '', rule: blankRule(), image: null, styling: false };
-  return { id: g.id, goal: g, title: g.title, art: g.art, color: g.color, reminders: [...(g.reminders || [])], prompt: g.text?.prompt || '',
+  if (!g) return { id: null, goal: null, title: '', art: 'star', color: 'blue', reminders: ['20:00', '22:00', '24:00'], remindDaily: true, prompt: '', photo: '', video: '', place: { radiusM: 200, set: false, name: '' }, repos: '', accounts: '', rule: blankRule(), image: null, styling: false };
+  return { id: g.id, goal: g, title: g.title, art: g.art, color: g.color, reminders: [...(g.reminders || [])], remindDaily: g.remindDaily === true, prompt: g.text?.prompt || '',
     photo: g.photo?.prompt || '', video: g.video?.prompt || '', styling: false,
     place: { radiusM: g.location?.radiusM || 200, set: !!g.location?.set, name: g.location?.name || '' }, repos: (g.github?.excludeRepos || []).join(', '), accounts: (g.github?.accounts || []).join(', '),
     rule: { ...blankRule(), ...JSON.parse(JSON.stringify(g.rule)), minChars: g.rule.requires.includes('text') ? g.rule.minChars : 80 }, image: g.image };
@@ -1097,8 +1097,13 @@ function drawEditor() {
 
     <div class="gh">${L('通知する時刻', 'Reminders')}</div>
     <ul class="list plain"><li class="row"><div class="chips">${ed.reminders.map(t => `<span class="chip">${esc(t)}<button data-rm-rem="${esc(t)}" aria-label="${L(`${esc(t)}を消す`, `Remove ${esc(t)}`)}">×</button></span>`).join('')}
-      <label class="chip add">＋ <input type="time" id="edRemAdd" aria-label="${L('時刻を追加', 'Add time')}"></label></div></li></ul>
-    <p class="gf">${r.period === 'daily' ? L('まだ出していない日に通知します。', 'Sent on days you haven’t submitted yet. ') : L('最終日に通知します。足りなくなりそうな日は朝にも知らせます。', 'Sent on the last day, plus a morning heads-up when you’re running out of days. ')}${L('24:00 は夜中の0時、3:00より前は翌朝です。', '24:00 is midnight; times before 3:00 are the next morning.')}</p>
+      <label class="chip add">＋ <input type="time" id="edRemAdd" aria-label="${L('時刻を追加', 'Add time')}"></label></div></li>
+    ${r.period !== 'daily' ? `<li class="row"><div class="chips">
+      <button class="chip ${ed.remindDaily ? 'sel' : ''}" data-remind-daily="1" aria-pressed="${ed.remindDaily}">${L('まだの日は毎日', 'Every day not done yet')}</button>
+      <button class="chip ${ed.remindDaily ? '' : 'sel'}" data-remind-daily="0" aria-pressed="${!ed.remindDaily}">${L('最終日だけ', 'Last day only')}</button></div></li>` : ''}</ul>
+    <p class="gf">${r.period === 'daily' ? L('まだ出していない日に通知します。', 'Sent on days you haven’t submitted yet. ')
+      : ed.remindDaily ? L('まだ出していない日は毎日、この時刻に通知します。足りなくなりそうな日は朝にも知らせます。', 'Sent every day you haven’t submitted yet, plus a morning heads-up when you’re running out of days. ')
+      : L('最終日に通知します。足りなくなりそうな日は朝にも知らせます。', 'Sent on the last day, plus a morning heads-up when you’re running out of days. ')}${L('24:00 は夜中の0時、3:00より前は翌朝です。', '24:00 is midnight; times before 3:00 are the next morning.')}</p>
 
     <p class="gf" style="margin-top:20px">${esc(startInfo)}</p>
     ${g ? stateControls(g) : ''}`;
@@ -1162,6 +1167,7 @@ $('#sheetBody').addEventListener('click', async e => {
     r[d.step] = Math.min(lim[1], Math.max(lim[0], (r[d.step] || 0) + Number(d.d)));
   } else if (d.yen) r.penaltyYen = Number(d.yen);
   else if (d.rmRem) ed.reminders = ed.reminders.filter(x => x !== d.rmRem);
+  else if (d.remindDaily) ed.remindDaily = d.remindDaily === '1';
   else if ('styling' in d) ed.styling = !ed.styling;
   else if (d.art) ed.art = d.art;
   else if (d.color) ed.color = d.color;
@@ -1185,7 +1191,7 @@ $('#imageFile').addEventListener('change', async e => {
 async function saveGoal() {
   const r = ed.rule;
   const rule = { requires: r.requires, period: r.period, count: r.count, days: r.days, penaltyYen: r.penaltyYen, minChars: r.requires.includes('text') ? r.minChars : 0 };
-  const body = { title: ed.title, art: ed.art, color: ed.color, reminders: ed.reminders, text: { prompt: ed.prompt }, photo: { prompt: ed.photo }, video: { prompt: ed.video },
+  const body = { title: ed.title, art: ed.art, color: ed.color, reminders: ed.reminders, remindDaily: ed.remindDaily, text: { prompt: ed.prompt }, photo: { prompt: ed.photo }, video: { prompt: ed.video },
     github: { excludeRepos: ed.repos, accounts: ed.accounts }, rule,
     location: { radiusM: ed.place.radiusM, name: ed.place.name, ...(ed.place.coords || {}) } };
   if (ed.id) {

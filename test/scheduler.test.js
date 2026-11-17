@@ -49,6 +49,34 @@ test('reminders fire at 20:00 / 22:00 / 24:00 once each, and stop after submitti
   assert.equal(sent.length, 2, 'a pending submission stops the reminders');
 });
 
+test('a weekly goal with remindDaily is reminded on every day nothing was submitted yet', async () => {
+  const goals = [{ id: 'dev', title: '開発', type: 'github', period: 'weekly', count: 5, penaltyYen: 500, reminders: ['20:00', '22:00'], remindDaily: true }];
+  const { sent, at, store } = await setup({ goals, startDate: '2026-11-02' });
+  await at('2026-11-02T20:00:30'); // Monday, the first day of the week
+  assert.equal(sent.length, 1);
+  assert.match(sent[0].title, /開発: 今日はまだです/);
+  assert.match(sent[0].message, /今週あと5回（残り7日）/);
+  await at('2026-11-02T20:01:00'); // not re-sent
+  assert.equal(sent.length, 1);
+  // Tuesday: a push arrives before the reminders, so none that day
+  await store.put('submissions', { id: 'gh-dev-2026-11-03', goalId: 'dev', windowKey: 'W2026-11-02', status: 'approved', submittedAt: jst('2026-11-03T12:00:00') });
+  await at('2026-11-03T20:00:30');
+  await at('2026-11-03T22:00:30');
+  assert.equal(sent.length, 1, 'a submission today stops that day\'s reminders');
+  // Wednesday: nothing yet, so the reminder is back, counting the push from Tuesday
+  await at('2026-11-04T20:00:30');
+  assert.equal(sent.length, 2);
+  assert.match(sent[1].message, /今週あと4回（残り5日）/);
+});
+
+test('a weekly goal without remindDaily is only reminded on its last day', async () => {
+  const goals = [{ id: 'dev', title: '開発', type: 'github', period: 'weekly', count: 5, penaltyYen: 500, reminders: ['20:00'] }];
+  const { sent, at } = await setup({ goals, startDate: '2026-11-02' });
+  await at('2026-11-02T20:00:30');
+  await at('2026-11-03T20:00:30');
+  assert.equal(sent.length, 0);
+});
+
 test('stale reminders are skipped after the Mac wakes up', async () => {
   const { sent, at } = await setup();
   await at('2026-10-27T20:30:00');

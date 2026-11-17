@@ -117,7 +117,7 @@ async function buildState() {
     const loc = goal.location;
     return {
       id: goal.id, title: goal.title, art: goal.art, color: goal.color, image: goal.image || null, howto: goal.howto,
-      reminders: goal.reminders, text: goal.text, photo: goal.photo, video: goal.video, github: goal.github,
+      reminders: goal.reminders, remindDaily: goal.remindDaily === true, text: goal.text, photo: goal.photo, video: goal.video, github: goal.github,
       location: loc ? { radiusM: loc.radiusM || 200, set: Number.isFinite(loc.lat), name: loc.name || '', setAt: loc.setAt || null } : null,
       ...cur.rule, rule: shown, pendingFrom: pending > 0 ? goal.rules[pending].from : null,
       status: on ? 'active' : lastEvent(goal, today)?.why === 'pause' ? 'paused' : 'upcoming',

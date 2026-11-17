@@ -75,6 +75,8 @@ export function cleanLooks(input = {}, prev = {}) {
     color: has('color') ? (COLORS.includes(input.color) ? input.color : 'blue') : prev.color || 'blue',
     howto: has('howto') ? str(input.howto, 500) : prev.howto || '',
     reminders,
+    // weekly/monthly goals: also send the reminders on every day nothing was submitted yet, not only the last day
+    remindDaily: has('remindDaily') ? input.remindDaily === true : prev.remindDaily === true,
     text: { prompt: has('text') ? str(input.text?.prompt, 300) : prev.text?.prompt || '' },
     photo: { prompt: has('photo') ? str(input.photo?.prompt, 300) : prev.photo?.prompt || '' },
     video: { prompt: has('video') ? str(input.video?.prompt, 300) : prev.video?.prompt || '' },
@@ -104,12 +106,13 @@ function fromHowto(g, requires) {
 function normalize(g) {
   if (Array.isArray(g.rules)) {
     const rules = [...g.rules].sort((a, b) => (a.from || '').localeCompare(b.from || ''));
-    return { image: null, howto: '', reminders: [], text: { prompt: '' }, photo: { prompt: '' }, video: { prompt: '' }, location: null, github: { excludeRepos: [], accounts: [] }, timeline: [], ...g,
+    return { image: null, howto: '', reminders: [], remindDaily: false, text: { prompt: '' }, photo: { prompt: '' }, video: { prompt: '' }, location: null, github: { excludeRepos: [], accounts: [] }, timeline: [], ...g,
       ...fromHowto(g, rules.flatMap(r => r.requires || [])), rules };
   }
   const old = LEGACY[g.type] || fail(`goal "${g.id}": unknown type ${g.type}`);
   return {
     id: g.id, title: g.title, art: old.art, color: old.color, image: null, howto: g.howto || '', reminders: g.reminders || [],
+    remindDaily: g.remindDaily === true,
     text: { prompt: g.text?.prompt || (g.type === 'reading' ? L('本のタイトル、読んだページ、何が書いてあってどう思ったか', 'Book title, the pages you read, what it said and what you think') : '') },
     photo: { prompt: '' }, video: { prompt: '' }, ...fromHowto(g, old.requires),
     location: g.gps ? { lat: g.gps.lat, lng: g.gps.lng, name: g.gps.name || '', setAt: g.gps.setAt || null, radiusM: g.radiusM || 200 }

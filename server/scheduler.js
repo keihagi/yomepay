@@ -1,5 +1,6 @@
 // The clockwork: runs every ~30 seconds and
-//   1. sends deadline reminders (each goal's "HH:MM" times on its last day, plus a morning warning for weekly goals)
+//   1. sends deadline reminders (each goal's "HH:MM" times on its last day, plus a morning warning for weekly goals;
+//      weekly/monthly goals with remindDaily also get them on every day nothing was submitted yet)
 //   2. settles windows once their deadline (+ grace) has passed: met / exempt / missed → penalty + messages
 //   3. nags about unpaid penalties (you twice a day, the wife once a day)
 //   4. reminds you when evidence has been waiting for review too long
@@ -93,6 +94,21 @@ export function createScheduler({ store, notifier, goalsRepo, fetchPushes, now, 
       const ev = evaluateWindow({ goal: g, window: w, submissions: subs, exemptions: exemptionsFor(g, w.key), now: t, graceMs });
       if (ev.state !== 'open' || ev.submitted >= ev.required) continue;
       const remaining = ev.required - ev.submitted;
+      const doneToday = subs.some(s => s.goalId === g.id && s.windowKey === w.key && s.status !== 'rejected'
+        && businessDate(s.submittedAt ?? s.receivedAt, settings) === today);
+      if (today !== w.lastDate && g.period !== 'daily' && g.remindDaily && !doneToday) {
+        const left = daysLeft(w, today);
+        for (const hm of g.reminders) {
+          if (!near(fireTime(today, hm, settings))) continue;
+          await send({
+            to: 'me', key: `rem-${g.id}-${w.key}-${today}-${hm}`,
+            title: L(`${g.title}: 今日はまだです`, `${g.title}: not done today`),
+            message: L(`${g.period === 'weekly' ? '今週' : '今月'}あと${remaining}回（残り${left}日）。締め切り ${fmt(w.end)}。`,
+              `${remaining} more ${g.period === 'weekly' ? 'this week' : 'this month'} (${left} day${left > 1 ? 's' : ''} left). Deadline ${fmt(w.end)}.`),
+            priority: 3, tags: ['alarm_clock'],
+          });
+        }
+      }
       if (today === w.lastDate) {
         for (const [i, hm] of g.reminders.entries()) {
           if (!near(fireTime(today, hm, settings))) continue;
